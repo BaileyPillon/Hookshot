@@ -10,6 +10,7 @@
                 HOS_NVN_CONTINUE=1 (go on past nvnBootstrapLoader). */
 #include "hos.h"
 #include "hos_paths.h"
+#include "devtools.h"
 #include "../gpu/vk/vk_api.h"
 #include "../gpu/vk/oot_cheat_items.h"
 #include <math.h>
@@ -20,6 +21,10 @@
 #define HOOKSHOT_VERSION "unknown"
 #endif
 const char *hos_version(void) { return HOOKSHOT_VERSION; }   /* (discord_rpc.c's status) */
+static void devtools_log_sample(void *user, const char *json) {
+    (void)user;
+    hos_log(HOS_DEV_LOG_PREFIX "%s", json);
+}
 #if defined(_WIN32) || defined(__EMSCRIPTEN__)
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
@@ -928,6 +933,21 @@ static float oot_load_float(Ctx *c, uint64_t addr) {
     return value;
 }
 
+/* Observation only: a serialized player update is not a stop-the-world save-state boundary.
+   Never move this guest-memory read into the GPU replay or an inspector thread. */
+static void oot_dev_observe(Ctx *c, uint64_t actor) {
+    HosDevSampleV1 sample = {0};
+    sample.struct_size = sizeof sample;
+    sample.abi_version = HOS_DEV_ABI_V1;
+    sample.monotonic_ns = (uint64_t)hos_now_ns();
+    sample.program_id = hos_program_id;
+    snprintf(sample.game_build_id, sizeof sample.game_build_id, "%s", hos_main_build_id);
+    snprintf(sample.runtime_build, sizeof sample.runtime_build, "%s", HOOKSHOT_VERSION);
+    oot_gamedata_string(c, 0x1d6189dau, sample.scene, sizeof sample.scene);
+    for (unsigned i = 0; i < 3; i++) sample.position[i] = oot_load_float(c, actor + 796 + i * 4);
+    hos_dev_publish_sample(&sample);
+}
+
 static _Thread_local uint64_t flight_transform_controller;
 static _Thread_local uint64_t flight_pose_actor;
 static _Thread_local float flight_transform_yaw;
@@ -1116,6 +1136,7 @@ void hos_oot_lift_player(Ctx *c, uint64_t actor) {
     // Link can be updated by different guest workers on successive frames.
     static SRWLOCK cheats_lock = SRWLOCK_INIT;
     if (!TryAcquireSRWLockExclusive(&cheats_lock)) return;
+    if (hos_dev_enabled()) oot_dev_observe(c, actor);
     oot_update_player_cheats(c, actor, components);
     ReleaseSRWLockExclusive(&cheats_lock);
 #else
@@ -1305,6 +1326,10 @@ static int game_main(int argc, char **argv) {
     load_hookshot_env();
 #endif
     occlusion_switch();
+    {
+        const char *dev = getenv("HOS_DEVTOOLS");
+        hos_dev_init(dev && !strcmp(dev, "1"), devtools_log_sample, NULL);
+    }
     {
         const char *protect_hearts = getenv("HOS_OOT_PROTECT_HEARTS");
         hos_oot_protect_hearts = protect_hearts && !strcmp(protect_hearts, "1");

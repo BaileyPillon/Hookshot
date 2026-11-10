@@ -174,6 +174,10 @@ A build reads and writes tens of gigabytes. When the game folder or the build fi
 
 ## The options file
 
+Experimental developer inspection and the checkpoint/mod-interface roadmap are in
+[devtools.md](devtools.md). `HOS_DEVTOOLS=1` opts a developer build into the read-only
+player-observation log feed; it is off by default and does not enable save-state restore.
+
 `hookshot_options.ini`, in the game folder, holds the Insert menu's rows as `<key>=<number>`: the row's name in lower
 case with `_` for spaces (`frame_generation=2`, `invert_camera_x=1`), except Output resolution, which is `output_res`.
 `gpu/vk/vk_menu.cpp` writes the whole file at every change (`save`), with `options_version=4`,

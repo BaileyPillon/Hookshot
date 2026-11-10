@@ -1,0 +1,53 @@
+# Source-only tests: no game files, game-derived build output or runtime artifacts.
+name: Developer tools foundations
+
+on:
+  push:
+    paths:
+      - '.github/workflows/devtools.yml'
+      - 'host/devtools.*'
+      - 'host/hos_main.c'
+      - 'scripts/hookshot_checkpoint.py'
+      - 'scripts/hookshot_dev.py'
+      - 'examples/devtools/**'
+      - 'tests/devtools_fixture.c'
+      - 'tests/test_devtools.py'
+      - 'tests/test_checkpoint_envelope.py'
+  pull_request:
+    paths:
+      - '.github/workflows/devtools.yml'
+      - 'host/devtools.*'
+      - 'host/hos_main.c'
+      - 'scripts/hookshot_checkpoint.py'
+      - 'scripts/hookshot_dev.py'
+      - 'examples/devtools/**'
+      - 'tests/devtools_fixture.c'
+      - 'tests/test_devtools.py'
+      - 'tests/test_checkpoint_envelope.py'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  foundations:
+    name: Observer and checkpoint tests (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, windows-2022]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 5
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: '3.12'
+      - name: Compile observer SDK and exercise the live console
+        run: python -I -B tests/test_devtools.py --cxx clang++
+      - name: Check checkpoint integrity and compatibility selection
+        run: python -I -B tests/test_checkpoint_envelope.py
