@@ -42,21 +42,21 @@ class EnvelopeTests(unittest.TestCase):
         self.assertEqual(self.write(), self.checkpoint)
         self.assertEqual(self.write(replace(self.checkpoint, exact=None)).exact, None)
 
-    def test_exact_requires_opt_in_and_full_identity(self):
+    def test_legacy_exact_cannot_be_authorized_by_a_boolean(self):
         loaded = self.write()
         self.assertEqual(cp.choose_restore(loaded, self.identity).mode, "reject")
-        self.assertEqual(cp.choose_restore(loaded, self.identity, exact_supported=True).mode, "exact")
+        self.assertEqual(cp.choose_restore(loaded, self.identity, exact_supported=True).mode, "reject")
         self.assertEqual(cp.choose_restore(loaded, self.identity, exact_supported="false").mode, "reject")
         for current in (replace(self.identity, runtime_build="next"), replace(self.identity, state_abi=2),
                         replace(self.identity, runtime_sha256="4" * 64), replace(self.identity, platform="other")):
             self.assertEqual(cp.choose_restore(loaded, current, exact_supported=True).mode, "reject")
             self.assertEqual(cp.choose_restore(loaded, current, exact_supported=True,
-                             portable_providers={"fixture.position": 1}).mode, "portable")
+                             portable_providers={"fixture.position": 1}).mode, "reject")
 
-    def test_portable_needs_compatible_provider(self):
+    def test_legacy_portable_cannot_supply_native_save_binding(self):
         loaded = self.write(replace(self.checkpoint, exact=None))
         self.assertEqual(cp.choose_restore(loaded, self.identity, portable_providers={"fixture.position": 1}).mode,
-                         "portable")
+                         "reject")
         self.assertEqual(cp.choose_restore(loaded, self.identity, portable_providers={"fixture.position": 2}).mode,
                          "reject")
 

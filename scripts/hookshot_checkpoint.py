@@ -200,21 +200,13 @@ def read_checkpoint(path):
 
 
 def choose_restore(checkpoint, current, *, exact_supported=False, portable_providers=None):
-    """Plan only. A provider still needs payload validation and a proven apply boundary."""
+    """Legacy schema 1 is inspection-only; use hookshot_statefile for restore planning.
+
+    Schema 1 cannot bind a state to its native save slot or detect rebased code,
+    changed host resources or an incompatible live scheduler. A boolean exact
+    capability must never bypass that missing evidence.
+    """
     checkpoint.identity.validate()
     current.validate()
     _provider(checkpoint.provider, checkpoint.provider_schema)
-    saved = checkpoint.identity
-    if (saved.program_id, saved.game_build_id) != (current.program_id, current.game_build_id):
-        return RestorePlan("reject", "different game or game build; migration is not implemented")
-    if (saved.mod_set_sha256, saved.config_sha256) != (current.mod_set_sha256, current.config_sha256):
-        return RestorePlan("reject", "mod/configuration fingerprints differ")
-    if checkpoint.provider == "hookshot.player-observation":
-        return RestorePlan("reject", "an observation is not a restorable checkpoint")
-    if exact_supported is True and checkpoint.exact is not None and saved == current:
-        return RestorePlan("exact", "identical identity and an explicit exact-restore provider")
-    supported = portable_providers or {}
-    version = supported.get(checkpoint.provider)
-    if type(version) is int and version == checkpoint.provider_schema:
-        return RestorePlan("portable", "explicit portable provider; exact identity/capability unavailable")
-    return RestorePlan("reject", "no compatible restore provider; capture/restore is not implemented by the envelope")
+    return RestorePlan("reject", "legacy schema 1 lacks native save binding and exact runtime evidence; inspection only")

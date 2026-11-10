@@ -1,8 +1,9 @@
 # Experimental developer tools and checkpoint roadmap
 
 This fork starts three related projects: resilient checkpoints, live development tools,
-and documented mod interfaces. The first increment is a read-only foundation. It does
-not change the renderer, load native plugins automatically, or restore game state.
+and documented mod interfaces. The live feed is read-only; checkpoint storage and
+a native restore coordinator are implemented separately. An OoT capture/restore
+backend is not enabled. The code does not change the renderer or load plugins automatically.
 The normal game remains unchanged unless `HOS_DEVTOOLS=1` is explicitly set.
 
 ## What is implemented
@@ -17,9 +18,13 @@ The normal game remains unchanged unless `HOS_DEVTOOLS=1` is explicitly set.
   external inspector never read live guest memory.
 - `scripts/hookshot_dev.py`: live inspection, bounded log reading, and observation
   export. It exposes no listener, arbitrary evaluator, or guest-memory write command.
-- `scripts/hookshot_checkpoint.py`: an independently testable checkpoint envelope,
-  integrity checks, atomic file replacement, and exact/portable/reject selection.
-  It **does not capture or restore Hookshot memory or gameplay progress**.
+- `scripts/hookshot_checkpoint.py`: the legacy schema-1 envelope, still readable for
+  inspection; restore plans reject its missing save binding/runtime evidence.
+- `scripts/hookshot_statefile.py`: streamed schema-2 checkpoints, exact/portable
+  preflight, native save binding, corruption fallback and an atomic background writer.
+- `host/checkpoint.c`: a native restore transaction coordinator with held-boundary
+  requirements, bounded retries, fresh-scene enforcement, rollback and recovery states.
+  See [the Sunshine adaptation](sunshine-checkpoints.md) for the protocol and missing backend.
 
 The code is a development foundation, not a ready-to-install save-state feature.
 
@@ -76,36 +81,23 @@ decoded numbers. Integers avoid locale-dependent decimal formatting. UTF-8 strin
 are validated and escaped. Unsupported/overlong/non-finite samples are rejected;
 partially formatted records are never emitted.
 
-## Checkpoint prototype and compatibility
+## Checkpoints and compatibility
 
-Schema 1 is a ZIP_STORED container with exactly `manifest.json`, `portable.json`,
-and optionally `exact.bin`. There are no extracted paths, Python object deserialization,
-executable hooks or compressed payloads. Bounds are 16 KiB of manifest, 64 KiB of
-portable data, and 64 MiB of opaque exact data. The exact bound is intentionally a
-prototype limit; full Hookshot snapshots will need a streamed/chunked successor.
-Payload sizes and SHA-256 hashes are checked before a restore plan can be selected.
-Hashes detect corruption, not an untrusted author's malicious intent.
+[sunshine-checkpoints.md](sunshine-checkpoints.md) documents the implemented
+two-path adaptation, the streamed file format and the native transaction contract.
+Schema 2 adds originating save binding and exact runtime signatures; schema 1 remains
+inspection-only. The developer console recognizes both formats:
 
-Identity includes program/build IDs, runtime build and binary fingerprint, platform,
-snapshot ABI, mod-set fingerprint and configuration fingerprint. A future capture
-provider must compute these from the actual process and loaded modules; a version
-label by itself is not a sufficient binary identity.
-The game build ID retains the complete NSO ID reported by Hookshot (up to 32 bytes,
-with trailing zero bytes stripped by the existing loader), rather than assuming SHA-1.
+```text
+python -I scripts/hookshot_dev.py checkpoint-inspect work/synthetic.hsc
+```
 
-`choose_restore` selects:
-
-1. **Reject** for different games/builds or changed mod/config fingerprints.
-2. **Exact** only when the entire identity matches, bytes exist, and an exact-restore
-   capability was explicitly supplied.
-3. **Portable** only for a registered provider and matching provider schema; it may
-   handle a changed runtime/platform/ABI. The provider still validates its payload.
-4. **Reject** otherwise. Player observations are always refused as restore payloads.
-
-Selection is not execution. There is no built-in exact or portable game restore
-provider in this increment. Writes use a sibling temporary file, flush/fsync, read-back
-validation and atomic replacement. This protects a previous file from an interrupted
-write before replacement; power-loss guarantees depend on the filesystem.
+Preflight selects exact only with a matching binary, mapping, memory layout,
+scheduler/continuation and resource signatures plus an explicit provider. Otherwise
+it may select an explicitly registered portable provider; different game/build,
+mod/configuration or native-save identities reject. It never turns an observation
+into gameplay progress. Actual application still requires an OoT backend and held
+runtime barriers; neither a matching file nor a player-update lock supplies those.
 
 ## Next milestones and acceptance gates
 
@@ -128,15 +120,17 @@ also requires a deliberately designed boundary, not an unrestricted memory conso
 ```text
 python -I -B tests/test_devtools.py --cxx clang++
 python -I -B tests/test_checkpoint_envelope.py
+python -I -B tests/test_checkpoint_statefile.py
+python -I -B tests/test_checkpoint_coordinator.py --cxx clang++
 python -I -B tests/run_all.py
 ```
 
 Fixtures use synthetic samples and payloads, not game data. Test results establish
 SDK/transport/format behavior; they do not establish gameplay capture/restore safety.
-The `Developer tools foundations` workflow runs these focused tests on Ubuntu and
+The `Checkpoints and developer tools` workflow runs these focused tests on Ubuntu and
 Windows with Python 3.12. The existing source-regression workflow also discovers them.
 
-Local validation on 2026-11-10 (upstream base `d481e13`, Windows, Python 3.14.7,
+Initial foundation validation on 2026-11-10 (upstream base `d481e13`, Windows, Python 3.14.7,
 llvm-mingw): the observer/CLI check and 12 checkpoint checks passed. Both modified
 runtime translation units compiled with the native build's target/include options.
 The complete game-free suite reported 286 passed, 2 failed and 21 skipped; both

@@ -15,6 +15,7 @@ import time
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))  # python -I
 from hookshot_checkpoint import CheckpointError, read_checkpoint
+from hookshot_statefile import MAGIC, read_state
 
 PREFIX = "devtools-v1 "
 MAX_LINE = 4096
@@ -97,11 +98,22 @@ def main(argv=None):
     args = parser.parse_args(argv)
     try:
         if args.command == "checkpoint-inspect":
+            with args.path.open("rb") as stream:
+                modern = stream.read(len(MAGIC)) == MAGIC
+            if modern:
+                state = read_state(args.path)
+                print(json.dumps({"schema": 2, "identity": asdict(state.identity), "provider": state.provider,
+                                  "provider_schema": state.provider_schema, "binding": asdict(state.binding),
+                                  "exact_context": asdict(state.exact_context) if state.exact_context else None,
+                                  "exact_bytes": state.exact_bytes, "exact_blocks": state.exact_blocks,
+                                  "exact_error": state.exact_error, "optional_tags": state.optional_tags,
+                                  "note": "Integrity checked. A native backend and held runtime boundary are still required."}, indent=2))
+                return 0
             checkpoint = read_checkpoint(args.path)
             print(json.dumps({"identity": asdict(checkpoint.identity), "provider": checkpoint.provider,
                               "provider_schema": checkpoint.provider_schema,
                               "exact_bytes": len(checkpoint.exact or b""),
-                              "note": "Envelope validated. No capture/restore provider is installed by this tool."}, indent=2))
+                              "note": "Legacy schema 1: inspection only; no save-binding or exact runtime signatures."}, indent=2))
             return 0
         if args.command == "watch" and (not math.isfinite(args.interval) or not 0.1 <= args.interval <= 60):
             raise ValueError("watch interval must be between 0.1 and 60 seconds")
