@@ -21,12 +21,12 @@ game code, patches, state layouts or compression implementation are copied.
 | Validate before copying memory | The file worker validates/stages first; runtime revalidation and a rollback capture precede the first mutation |
 | Host resources remain outside the saved game | Explicit backend contract for native continuations, HLE handles, GPU/audio resources and cache invalidation; exact mode unavailable without it |
 
-The implemented native coordinator is `host/checkpoint.c`; the file and worker
-layer is `scripts/hookshot_statefile.py`. Tests execute the real coordinator with a
-synthetic backend and exercise real files. **There is not yet an OoT game backend
-or a verified whole-runtime rendezvous.** The normal game cannot save or load a
-checkpoint through these modules yet. No load hotkeys or controller bindings are
-installed, and `HOS_DEVTOOLS` remains a read-only observation switch.
+The native coordinator is `host/checkpoint.c`, and the file and worker layer is
+`scripts/hookshot_statefile.py`. The [native slot checkpoint tool](saves.md#reopen-a-saved-slot-as-a-checkpoint)
+archives a completed OoT save and launches a separate playthrough through the
+game's own loader. This exercises portable checkpoint storage with real game
+progress. The coordinator's live OoT backend and whole-runtime rendezvous remain
+open. `HOS_DEVTOOLS` remains a read-only observation switch.
 
 ## Why Sunshine's memory copy cannot be transplanted
 

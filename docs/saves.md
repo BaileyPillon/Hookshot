@@ -92,6 +92,33 @@ The script refuses to run while it sees Hookshot or any of the programs above ru
 copied to `oot-save-backups/<import or export>-<name>-<date>-<time>/` first: in `~/.local/share` on Linux, in
 `%LOCALAPPDATA%\Hookshot` on Windows. To undo a copy, put the backup's contents back.
 
+## Reopen a saved slot as a checkpoint
+
+Use **System → Save** in OoT, then close the game. Run these commands from the
+Hookshot source checkout with the path to your installed game folder:
+
+```powershell
+python -I scripts/oot_checkpoints.py --game "F:\Games\Hookshot" capture --out quicksave.hsc
+python -I scripts/oot_checkpoints.py --game "F:\Games\Hookshot" resume quicksave.hsc --new-user "F:\Games\Hookshot Checkpoint Run"
+```
+
+Choose **Continue** to play the restored slot. Each resume creates a new save
+folder. Use a fresh path for `--new-user` on subsequent runs. Your ordinary
+launch opens your regular playthrough, and the checkpoint file can open another
+copy of the earlier save.
+
+Capture chooses the newest complete slot in a single profile. Run `slots` with
+the same `--game` argument to see the profiles and slots, then use `capture
+--profile <id> --slot <number>` to choose a specific save. For a game started with
+`--user`, pass that folder to `slots` or `capture` as well. Use `--exefs` before
+the subcommand if the unpacked ExeFS is outside the builder's game folder.
+
+The checkpoint stores native progress, the slot's caption, account data, and
+game options. Resume checks the game build, loaded image, mods, profile and slot,
+then stages the files for OoT's own loader. It uses the location and progress
+recorded by the game's save. Live quicksave and exact restoration require
+further runtime integration. Keep `.hsc` files local with your game saves.
+
 ## Copy by hand
 
 Close both programs, then copy the **contents** of the folder you are leaving into the folder you are going to (see

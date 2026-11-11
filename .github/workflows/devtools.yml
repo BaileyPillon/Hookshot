@@ -11,6 +11,8 @@ on:
       - 'scripts/hookshot_checkpoint.py'
       - 'scripts/hookshot_dev.py'
       - 'scripts/hookshot_statefile.py'
+      - 'scripts/oot_checkpoints.py'
+      - 'tests/test_oot_checkpoints.py'
       - 'examples/devtools/**'
       - 'tests/devtools_fixture.c'
       - 'tests/test_devtools.py'
@@ -27,6 +29,8 @@ on:
       - 'scripts/hookshot_checkpoint.py'
       - 'scripts/hookshot_dev.py'
       - 'scripts/hookshot_statefile.py'
+      - 'scripts/oot_checkpoints.py'
+      - 'tests/test_oot_checkpoints.py'
       - 'examples/devtools/**'
       - 'tests/devtools_fixture.c'
       - 'tests/test_devtools.py'
@@ -65,3 +69,5 @@ jobs:
         run: python -I -B tests/test_checkpoint_statefile.py
       - name: Compile and exercise native restore transactions
         run: python -I -B tests/test_checkpoint_coordinator.py --cxx clang++
+      - name: Check native OoT save capture and isolated restore
+        run: python -I -B tests/test_oot_checkpoints.py
