@@ -17,8 +17,10 @@ this report does not claim to have searched private browser bookmarks. Original 
 that establishes availability, not the reason they disappeared. Renamed, private or unindexed forks can be missed.
 
 The requested “frichi” and “lichi” were interpreted as **Fritchii** and **Lichii**. Hookshot is the native Switch 2 remake
-recompilation; Lichii, Fritchii and NX2navi are related emulator lines. The popular N64 Ocarina recompilation is a
-different game/engine. Merging their entire cores would not add compatible Hookshot features.
+recompilation. NX2navi and sostenesfreitas/ocarina-recomp also compile the Switch 2 remake natively, with different
+runtimes. Lichii and the reviewed Fritchii nx2 branches are emulator lines. Shared save formats do not make their
+renderers, generated code or executable patches interchangeable. An earlier version of this report incorrectly
+called NX2navi an emulator and ocarina-recomp an N64 port; their own architecture/README sources establish the correction.
 
 ## Chosen implementation
 
@@ -33,6 +35,7 @@ different game/engine. Merging their entire cores would not add compatible Hooks
 | Randomizer | Pinned MIT Hookshot Randomized companion, exported/started by Longshot's companion tool. | No progression solver; possible unbeatable seeds. No event-gift shuffle or proven co-op combination. |
 | Completion tracker | Pinned MIT Boomerang companion; save-folder-aware launcher and build/test fixes. | Read-only save interpretation; uncertain mappings/manual identification remain. |
 | Developer access | Upstream local control bridge, observation/bug-report tools plus retained Longshot checkpoint foundation. | Not OpenGOAL-style arbitrary hot reload or a new in-game checkpoint browser. |
+| Launcher and resilient saves | Independently implemented game/profile/companion launcher, verified import into new profiles, native-save checkpoint browser and CPU/RAM/GPU advice. Mako and Ocarina Recomp migration workflows informed the design. | Original saves and existing profiles are never overwritten; advice does not automatically change settings. Not live-memory or pause-menu quicksave. |
 
 ## License and evidence findings that change the selection
 
@@ -69,7 +72,7 @@ README descriptions below are discovery evidence, not independent gameplay verif
 |---|---:|---|---|
 | [BaileyPillon/Longshot](https://github.com/BaileyPillon/Longshot) | 0 | [d481e1336dfb](https://github.com/BaileyPillon/Longshot/tree/d481e1336dfb2de7cc8c255e042c7843aa0f7070) | Our fork; retained its checkpoint/devtools work and advanced the upstream base. |
 | [NotRexed/Hookshot](https://github.com/NotRexed/Hookshot) | — | 404 | Original URL returned 404; recovered the exact v2.2.0-rc.1 revision through the surviving GitHub fork network. |
-| [Shakoquo/Mako](https://github.com/Shakoquo/Mako) | 27 | [348436cce81b](https://github.com/Shakoquo/Mako/tree/348436cce81b3d095ab2a312a0d8e63c267778b4) | AMD/foliage fixes, hardware-aware setup, Master Quest child-dungeon preview. Use common upstream fixes; do not merge the fork wholesale or its restricted controller art. |
+| [Shakoquo/Mako](https://github.com/Shakoquo/Mako) | 27 | [348436cce81b](https://github.com/Shakoquo/Mako/tree/348436cce81b3d095ab2a312a0d8e63c267778b4) | AMD/foliage fixes, hardware-aware setup, Master Quest child-dungeon preview. Hardware advice, launcher and save-import workflow independently adapted; common upstream fixes retained. Restricted controller art and partial dungeon mode not imported. |
 | [madebyjordan/Longshot](https://github.com/madebyjordan/Longshot) | 2 | [01d3ee79e732](https://github.com/madebyjordan/Longshot/tree/01d3ee79e732a9978ae5a55f2953e171c1bd32bd) | Unrelated fork sharing our name; older AMD-oriented changes. Do not confuse its releases with this project. |
 | [Sacrappy/HeyListen](https://github.com/Sacrappy/HeyListen) | 6 | [be8bd70948b1](https://github.com/Sacrappy/HeyListen/tree/be8bd70948b16e438a403a8a945edbce63080278) | Large host/job/render redesign. Not a small compatible feature patch; requires separate architecture and cross-GPU evaluation. |
 | [RufflezAU/Hookshot](https://github.com/RufflezAU/Hookshot) | 8 | [216f7ebd5094](https://github.com/RufflezAU/Hookshot/tree/216f7ebd5094891376a3c583a86e80560d33ed53) | Deck/Linux performance work. Catalogue for that hardware; no global Windows desktop defaults imported. |
@@ -100,7 +103,7 @@ README descriptions below are discovery evidence, not independent gameplay verif
 | [ZuanCrisp/NX2Navi-Zelda-OOT-Port](https://github.com/ZuanCrisp/NX2Navi-Zelda-OOT-Port) | 9 | [53523106136d](https://github.com/ZuanCrisp/NX2Navi-Zelda-OOT-Port/tree/53523106136dd7eaa94f5e2e0f8965c064eca2d1) | NX2navi derivative; not treated as a separate native recompilation or a license workaround. |
 | [prop11/Epona](https://github.com/prop11/Epona) | 0 | [f5da269add5c](https://github.com/prop11/Epona/tree/f5da269add5c8040d4f6c6aeb7f811cd08125f3c) | NX2navi derivative; no reserved additions imported. |
 | [suvrathkesaraju-lgtm/Penguin-NX2navi](https://github.com/suvrathkesaraju-lgtm/Penguin-NX2navi) | 2 | [262c13979e15](https://github.com/suvrathkesaraju-lgtm/Penguin-NX2navi/tree/262c13979e15044effd2c5b27576e82678114d5c) | NX2navi Linux derivative; no reserved additions imported. |
-| [sostenesfreitas/ocarina-recomp](https://github.com/sostenesfreitas/ocarina-recomp) | 1175 | [406b3ae0321e](https://github.com/sostenesfreitas/ocarina-recomp/tree/406b3ae0321eff8dd083a607a8186aa56b52b873) | Separate N64 Ocarina recompilation, not the Switch 2 remake. Its gameplay/renderer mods are not drop-in compatible. |
+| [sostenesfreitas/ocarina-recomp](https://github.com/sostenesfreitas/ocarina-recomp) | 1175 | [406b3ae0321e](https://github.com/sostenesfreitas/ocarina-recomp/tree/406b3ae0321eff8dd083a607a8186aa56b52b873) | Native Switch 2 remake recompilation (GPL-3.0), with a different runtime. The maintainer now directs players and fixes toward Hookshot. Shared native saves and migration tools inform Longshot save import; not an N64 port. |
 | [pavelgajdo/Hokkaido](https://github.com/pavelgajdo/Hokkaido) | 242 | [32c4089558e2](https://github.com/pavelgajdo/Hokkaido/tree/32c4089558e25395aa026c594f2b70e5773360b1) | Android-focused emulator fork. Platform port is outside this Windows native integration. |
 | [xTopher1049/Tuxchii](https://github.com/xTopher1049/Tuxchii) | 78 | [e3d621cc75e9](https://github.com/xTopher1049/Tuxchii/tree/e3d621cc75e9101ea16f74216caa4296efc5f99d) | Linux-oriented emulator fork. Keep Hookshot's native Linux implementation instead. |
 | [conongnang/Lichii](https://github.com/conongnang/Lichii) | 13 | [79f33200cf6c](https://github.com/conongnang/Lichii/tree/79f33200cf6c7c5aa506170a4fb17662bcdf8318) | OoT/AMD performance branch; no unsupported assumptions about NVIDIA or native-host parity. |

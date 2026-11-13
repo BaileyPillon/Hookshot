@@ -20,7 +20,7 @@ moves a private-save fixture read into `beforeAll`, so a skipped suite does not 
 It does not remove any assertions or include private fixtures. The patch is applied to an ignored export, preserving
 the source submodule's reviewed revision. Upstream's MIT license also applies to the modified tracker portions.
 
-The independent save-profile and mod-manager implementations are part of Longshot under its repository license.
+The independent save-profile, launcher, hardware-advice and mod-manager implementations are part of Longshot under its repository license.
 They use workflow ideas from the research, not reserved NX2navi additions or Mako's restricted controller artwork.
 
 See [usage and limits](../docs/longshot-features.md), [research](../docs/longshot-fork-research.md) and

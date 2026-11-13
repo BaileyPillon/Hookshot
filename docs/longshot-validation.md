@@ -7,7 +7,7 @@ Branch: `feat/fork-feature-integration`. Upstream base: `4aee23659b9436dab2cd7be
 
 | Check | Result | What it proves |
 |---|---|---|
-| Full `python -I -B tests/run_all.py --jobs 4` | **492 passed, 0 failed, 43 skipped**, 338 seconds | Game-free host, renderer, tools, existing checkpoint/devtools and source regression checks. Skips include Linux-only cases, missing .NET/spirv-val and other declared unavailable dependencies. |
+| Full `python -I -B tests/run_all.py --jobs 3` after launcher additions | **493 passed, 0 failed, 43 skipped**, 506 seconds | Game-free host, renderer, tools, existing checkpoint/devtools and source regression checks. Skips include Linux-only cases, missing .NET/spirv-val and other declared unavailable dependencies. Run alongside the fresh game compilation. |
 | New/affected focused group | **11 passed, 0 failed**, 15 seconds | Profile isolation; mod-manager/native-loader agreement; co-op opt-in/build guards; randomizer synthetic formats and seed-save isolation; overlay/input/present/screensaver regressions. |
 | Windows Vulkan renderer build | **206 translation units compiled; 0 failed; DLL linked**, 179 seconds | The combined Vulkan/menu/co-op overlay source builds with the available llvm-mingw toolchain. This validation build did not enable the optional NGX/FSR SDKs. |
 | Changed native host compilation | **10 translation units passed** | `hos_main`, profiles, mods, bridge, puppet/platform support, SDL, input, native presentation and Windows display compile together against generated runtime headers. Not a linked full game. |
@@ -15,6 +15,11 @@ Branch: `feat/fork-feature-integration`. Upstream base: `4aee23659b9436dab2cd7be
 | Pinned tracker + compatibility patch | **Build and TypeScript checks passed; 15 tests passed, 11 skipped** | Five test files, public mapping/logic and parser checks. Skipped cases require private save fixtures, which were not added. |
 | Mod manager visual check | **Window, row selection, conflict winner and disable action observed** | Tested three authored synthetic mod folders; disabling one visibly changed the row to Off and enabled count from three to two. Screenshot in `docs/images/longshot-mod-manager.png`. |
 | Companion preparation | **Pinned archive export and compatibility patch applied** | Source exports stay under ignored `work/longshot-companions`; source submodules remain at the reviewed revisions. |
+| Launcher save operations | **11 tests passed** | Verified copies, original/profile isolation, rejection of incomplete/oversized saves and links, cleanup on simulated disk failure, and stopping publication when a game starts during import. |
+| Launcher visual/function check | **Capture and restore observed in the Tk window** | An authored synthetic save was captured, listed and restored into profile 2. The source still contained both slots; the restored profile contained only the selected slot. Hardware advice displayed the detected CPU, RAM and GPU without writing settings. |
+| GitHub checks for `30acd9279cd1` | **All applicable checks passed** | Both Windows/Linux source-test shards, checkpoints, SPIR-V/workflow checks, Windows renderer/Builder, full DLSS+FSR link check, and Linux AppImage build. Release publication was intentionally skipped on this draft PR. |
+| Randomizer with local game assets | **Seed 1132026 generated; independent overlay verifier returned OK** | Chest/shop shuffle and patch consistency against the actual build's assets. Verifier reported 174 chests, 141 changed, and 63/64 shop slots changed. Does not prove progression logic or beatability. |
+| Co-op asset generation | **Completed from the local RomFS** | Generated child/adult puppet packs, HUD, and room data (3,599 placements in 257 rooms / 12 dungeons). Files remain local and outside ordinary active mods. Not a two-player gameplay result. |
 
 Host toolchain: existing llvm-mingw from HookshotBuilder; co-op: Visual Studio 2022 x64/CMake; tracker: Node 24 and npm.
 The suite used the existing builder Python environment for its declared dependencies. This work did not change Windows,

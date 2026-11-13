@@ -15,6 +15,40 @@ independent ocarina-note bindings and touchpad menu support; field-of-view/camer
 13-language menus; opening skip; and the local control/bug-report tools. Availability of graphics features depends on
 the build's optional SDKs and the GPU. Inclusion of source is not a performance measurement or a recommendation to enable frame generation.
 
+## Launcher, save imports and checkpoint browser
+
+From this checkout, with Python and Tk installed:
+
+```powershell
+python -I scripts/longshot_launcher.py --game "<experimental game folder>"
+```
+
+The launcher selects profiles 1–9, opens the mod manager, and starts the pinned completion tracker or randomizer.
+Build the tracker first using the companion instructions below. Graphics/controller options remain in the game's
+Insert menu. Ordinary play disables inherited co-op and randomizer-overlay environment settings.
+The launcher's explicit `--user` selection takes precedence over the in-game profile option for that launch.
+
+**Saves & checkpoints** lists native saves in the selected profile. Save normally and close the game first:
+
+- **Import saves:** select the source account folder containing `account.sav` and `slot_00`, `slot_01`, etc.
+  This works with the same native save format used by Hookshot, NX2navi, Ocarina Recomp and the emulator forks.
+  Choose an unused destination profile from 2–9 using the bottom selector. Files are bounded, staged, flushed,
+  read back and verified before publication. Existing profiles, profile 1 and source saves are never overwritten.
+  Linked paths and incomplete slots are refused. The separate `oot_saves.py` migration tool also recognizes
+  Ocarina Recomp's Portuguese `perfil/save/<account>` layout.
+- **Capture selected save:** archives that native save point under the experimental game's `longshot-checkpoints`.
+- **Restore selected checkpoint:** checks its identity/payload and restores into a new profile. The retained
+  `.hookshot_exefs` identifies the game; developers can supply a separate `--exefs <folder>`.
+
+![Checkpoint captured and restored using synthetic saves](images/longshot-checkpoints.png)
+
+These are native-save checkpoints, not snapshots of live process memory or a pause-menu quicksave feature.
+The launcher does not establish arbitrary mid-combat restoration. Keep the checkpoint files local: they contain saves.
+**This PC** reads CPU/RAM/GPU information and offers conservative starting points; it never changes game or Windows
+settings. NVIDIA VRAM comes from `nvidia-smi` where available, avoiding Windows' truncated 4 GiB adapter field.
+Advice is not a measured performance result. An optional `--romfs <folder>` lets ordinary development launches share
+existing assets; companion tools expect the game folder's usual `romfs` layout.
+
 ## Save profiles and FPS counter
 
 In **Insert → Gameplay**:

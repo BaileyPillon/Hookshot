@@ -62,6 +62,7 @@ LAYOUTS = (
     ("nand", "user", "save", "account", "<id>", TITLE, "0"),   # Eden's newer layout: used first when it exists
     ("nand", "user", "save", NO_ACCOUNT, "<id>", TITLE),        # Eden and its forks (Lichii, Eglantine, ...)
     ("profile", "save", "<id>"),                                 # NX2navi's game folder
+    ("perfil", "save", "<id>"),                                  # sostenesfreitas/ocarina-recomp
     ("user", "save", "<id>"),                                    # Hookshot's game folder on Windows
     ("save", "<id>"),                                            # Hookshot's data folder
 )

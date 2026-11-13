@@ -1,5 +1,6 @@
 > **Longshot development fork:** the `feat/fork-feature-integration` branch combines the Hookshot v2.2.0-rc.1 foundation
-> with save profiles, an adjustable FPS display, a mod manager, optional co-op, a randomizer and a completion tracker.
+> with a launcher/checkpoint browser, save profiles and verified imports, an adjustable FPS display, a mod manager,
+> optional co-op, a randomizer and a completion tracker.
 > Read [features and setup](docs/longshot-features.md), [the fork research](docs/longshot-fork-research.md), and
 > [validation and pending gameplay checks](docs/longshot-validation.md). This is not a tested replacement for a stable play installation.
 

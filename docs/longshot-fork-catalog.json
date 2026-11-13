@@ -27,7 +27,7 @@
     "stars_at_review": 27,
     "reported_license": "GPL-3.0",
     "access_error": null,
-    "decision": "AMD/foliage fixes, hardware-aware setup, Master Quest child-dungeon preview. Use common upstream fixes; do not merge the fork wholesale or its restricted controller art."
+    "decision": "AMD/foliage fixes, hardware-aware setup, Master Quest child-dungeon preview. Hardware advice, launcher and save-import workflow independently adapted; common upstream fixes retained. Restricted controller art and partial dungeon mode not imported."
   },
   {
     "repository": "madebyjordan/Longshot",
@@ -337,7 +337,7 @@
     "stars_at_review": 1175,
     "reported_license": "GPL-3.0",
     "access_error": null,
-    "decision": "Separate N64 Ocarina recompilation, not the Switch 2 remake. Its gameplay/renderer mods are not drop-in compatible."
+    "decision": "Native Switch 2 remake recompilation (GPL-3.0), with a different runtime. The maintainer now directs players and fixes toward Hookshot. Shared native saves and migration tools inform Longshot save import; not an N64 port."
   },
   {
     "repository": "pavelgajdo/Hokkaido",
