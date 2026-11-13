@@ -56,6 +56,8 @@ class Launcher:
         for label, explanation, callback in (
             ("Manage mods", "Enable mods, choose their order, and inspect file conflicts.", self.mods),
             ("Completion tracker", "Read this profile's saves. Build the tracker once with the companion tool.", lambda: self.companion("tracker")),
+            ("Join co-op…", "Join a configured server using a separate profile. Requires the local co-op pack.", self.coop),
+            ("Full randomizer", "OoTrR logic, tracking and Archipelago tools in a separate game folder.", lambda: self.companion("ootrr")),
             ("Randomizer", "Generate a separate seed and playthrough. Some seeds may be unbeatable.", lambda: self.companion("randomizer"))):
             row = ttk.Frame(play)
             row.pack(fill="x", pady=7)
@@ -166,7 +168,10 @@ class Launcher:
             for account, slots in core.checkpoints.native_slots(user).items():
                 for slot in slots:
                     self.slots.insert("", "end", iid=f"{account}/{slot}", values=(account, slot))
-        for path in sorted((self.game / "longshot-checkpoints").glob("*.state"), reverse=True):
+        folder = self.game / "longshot-checkpoints"
+        # Use the existing CLI's extension; retain archives made by early launchers.
+        archives = list(folder.glob("*.hsc")) + list(folder.glob("*.state"))
+        for path in sorted(archives, reverse=True):
             try:
                 info = core.checkpoints.read_state(path)
                 core.checkpoints.validated_files(info)
@@ -183,6 +188,39 @@ class Launcher:
     def mods(self):
         self.require_game()
         Manager(tk.Toplevel(self.window), self.game / "mods")
+
+    def coop(self):
+        game = self.require_game()
+        dialog = tk.Toplevel(self.window)
+        dialog.title("Join co-op — Longshot")
+        dialog.resizable(False, False)
+        pane = ttk.Frame(dialog, padding=20)
+        pane.pack(fill="both", expand=True)
+        ttk.Label(pane, text="Join co-op", font=("Segoe UI", 16, "bold")).grid(row=0, column=0, columnspan=2, sticky="w", pady=(0, 10))
+        ttk.Label(pane, text="Use a profile reserved for co-op. Your host provides the address and password.\n"
+                  "This starts the game; it does not start a server or change router settings.",
+                  wraplength=510).grid(row=1, column=0, columnspan=2, sticky="w", pady=(0, 16))
+        values = {key: tk.StringVar(value=value) for key, value in (
+            ("profile", self.profile.get() if self.profile.get() != "1" else "2"),
+            ("server", "127.0.0.1"), ("port", "27510"), ("name", "Player"), ("password", ""))}
+        for row, (key, label) in enumerate((("profile", "Co-op profile"), ("server", "Host name / IPv4 address"),
+                                           ("port", "Port"), ("name", "Player name"), ("password", "Session password")), 2):
+            ttk.Label(pane, text=label).grid(row=row, column=0, sticky="w", padx=(0, 16), pady=6)
+            if key == "profile":
+                field = ttk.Combobox(pane, textvariable=values[key], values=list(map(str, range(2, 10))), state="readonly", width=8)
+            else:
+                field = ttk.Entry(pane, textvariable=values[key], width=32, show="*" if key == "password" else "")
+            field.grid(row=row, column=1, sticky="w", pady=6)
+        ttk.Label(pane, text="The password is passed only to this game process and is not saved by the launcher.",
+                  wraplength=510).grid(row=7, column=0, columnspan=2, sticky="w", pady=(12, 16))
+        def join():
+            number = int(values["profile"].get())
+            self.child = core.start_coop(game, number, values["server"].get().strip(), int(values["port"].get()),
+                                         values["name"].get(), values["password"].get(), self.romfs)
+            values["password"].set("")
+            self.status.set(f"Started co-op with profile {number}. Connection status appears in the game.")
+            dialog.destroy()
+        ttk.Button(pane, text="Join co-op", command=lambda: self.guard(join)).grid(row=8, column=1, sticky="e")
 
     def companion(self, name):
         self.require_game()
@@ -213,7 +251,7 @@ class Launcher:
         folder = core.plain_path(game / "longshot-checkpoints")
         folder.mkdir(exist_ok=True)
         stamp = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
-        path = folder / f"{stamp}-profile{self.profile.get()}-{slot}-{uuid.uuid4().hex[:6]}.state"
+        path = folder / f"{stamp}-profile{self.profile.get()}-{slot}-{uuid.uuid4().hex[:6]}.hsc"
         self.task("Capturing and verifying this native save…",
                   lambda: core.checkpoints.capture(game, user, account, slot[5:], path, exefs=self.exefs),
                   lambda _: self.saved(f"Captured {slot}. Its original save is unchanged."))

@@ -139,6 +139,64 @@ class LauncherTests(unittest.TestCase):
         self.assertIn("Try DLSS Quality if GPU-limited", [r[1] for r in rows])
         self.assertNotIn("Memory", [r[0] for r in rows])
 
+    def coop_fixture(self):
+        (self.game / ("hookshot.exe" if os.name == "nt" else "hookshot")).touch()
+        (self.game / "image.bin").touch()
+        (self.game / "romfs").mkdir()
+        (self.game / "hookshot_coop.dll").touch()
+        pack = self.game / "mods/contents/0400486024DEC000/coop-puppet"
+        (pack / "romfs").mkdir(parents=True)
+        (pack / "coop_hud").mkdir()
+        for name in ("coop_puppet.json", "coop_rooms.txt", "coop_hud/hud.json", ".longshot-disabled"):
+            (pack / name).touch()
+        return pack
+
+    def test_coop_plan_isolates_profile_and_secret_and_clears_inherited_modes(self):
+        pack = self.coop_fixture()
+        with patch.dict(os.environ, {"HOS_FS_OVERLAY": "randomizer", "LICHII_COOP_TEST_PUPPET": "1",
+                                     "LICHII_COOP_CHEATS": "1", "LICHII_COOP_SERVER": "wrong-server"}):
+            command, env = core.coop_launch_plan(self.game, 3, "127.0.0.1", 27510, "Link", "test-only")
+        self.assertEqual(Path(command[-1]).resolve(), core.profile_folder(self.game, 3).resolve())
+        self.assertNotIn("test-only", command)
+        self.assertEqual(env["LICHII_COOP_PASSWORD"], "test-only")
+        self.assertEqual(env["LICHII_COOP_SERVER"], "127.0.0.1")
+        self.assertNotIn("HOS_FS_OVERLAY", env)
+        self.assertEqual(Path(env["HOS_MODS"]).resolve(), pack.parent.resolve())
+        self.assertEqual(env["HOS_COOP"], "1")
+        self.assertEqual(env["LICHII_COOP_CHEATS"], "0")
+        self.assertNotIn("LICHII_COOP_TEST_PUPPET", env)
+        self.assertFalse(core.profile_folder(self.game, 3).exists())
+        self.assertTrue((pack / ".longshot-disabled").exists())
+
+    def test_coop_refuses_original_profile_bad_addresses_and_secrets(self):
+        self.coop_fixture()
+        valid = [self.game, 2, "localhost", 27510, "Link", "test-only"]
+        for index, value in ((1, 1), (2, "https://host"), (2, "host:27510"), (2, "::1"),
+                             (3, 0), (3, 65536), (3, True), (4, ""), (4, "x" * 17),
+                             (4, "bad\nname"), (5, ""), (5, "x" * 129), (5, "é" * 65), (5, "secret\n")):
+            args = valid.copy()
+            args[index] = value
+            with self.subTest(index=index, value=value), self.assertRaises(ValueError):
+                core.coop_launch_plan(*args)
+        self.assertFalse((self.game / "user").exists())
+
+    def test_coop_refuses_a_pack_active_in_ordinary_play(self):
+        pack = self.coop_fixture()
+        (pack / ".longshot-disabled").unlink()
+        with self.assertRaisesRegex(ValueError, "Disable the coop-puppet"):
+            core.coop_launch_plan(self.game, 2, "localhost", 27510, "Link", "test-only")
+
+    def test_coop_refuses_missing_module_or_pack_metadata(self):
+        pack = self.coop_fixture()
+        module = self.game / "hookshot_coop.dll"
+        module.unlink()
+        with self.assertRaisesRegex(ValueError, "module"):
+            core.coop_launch_plan(self.game, 2, "localhost", 27510, "Link", "test-only")
+        module.touch()
+        (pack / "coop_rooms.txt").unlink()
+        with self.assertRaisesRegex(ValueError, "puppet pack"):
+            core.coop_launch_plan(self.game, 2, "localhost", 27510, "Link", "test-only")
+
 
 if __name__ == "__main__":
     unittest.main()

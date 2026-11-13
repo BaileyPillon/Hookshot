@@ -1,6 +1,12 @@
 {
   "schema": 1,
   "companions": {
+    "ootrr": {
+      "repository": "https://github.com/Mozencaz/OotrR",
+      "commit": "fdc2b2f26ba146b60f565aa83892ccd8bb25acdc",
+      "license": "MIT",
+      "patches": ["patches/ootrr-isolation.patch"]
+    },
     "oot-coop": {
       "repository": "https://github.com/daurosk/oot-remake-multiplayer",
       "commit": "f5e4ca3b407197349af3045abff4bb7475ac2fd8",

@@ -172,16 +172,49 @@ For a local development session:
    the DLL beside an older executable does not install the frame hooks.
 2. Put the built `hookshot_coop.dll` beside the experimental **game executable** (inside `bin` when applicable).
 3. Generate the puppet pack from your own local RomFS using the pinned companion's
-   `tools/puppet_pack/build.py --romfs <local romfs> --mod-dir <experimental mods folder>/coop-puppet`.
+   `tools/puppet_pack/build.py --romfs <local romfs> --mod-dir <game>/mods/contents/0400486024DEC000/coop-puppet`.
    Generated packs, shaders, HUD assets and game files must never be committed or shared.
 4. Configure `coop.ini`, authentication and the server using the pinned companion's [setup guide](../integrations/oot-coop/docs/setup.md).
    Start with a password-protected local session and isolated `--user` folders. Server hosting/port forwarding is a separate explicit action.
-5. Launch with **exactly `HOS_COOP=1`**. Unset, `0`, or any other value leaves the module unloaded. No server is started by
+5. The join form sets **exactly `HOS_COOP=1`** and scopes `HOS_MODS` to `<game>/mods/contents/0400486024DEC000`.
+   Unset, `0`, or any other co-op opt-in value leaves the module unloaded. No server is started by
    the default game or the build command. Co-op-specific null-read/platform workarounds also stay inactive when the module is off.
 
+The launcher now provides **Join co-op**. Put the pack at
+`<executable folder>/mods/contents/0400486024DEC000/coop-puppet`, then disable it in **Manage mods**. The join form
+requires profile 2–9, a host name or IPv4 address, port, player name and session password. It supplies the pack's RomFS
+through the normal mod loader only for that session; HUD and room metadata remain in the module's expected location.
+This preserves the resource-size-table merge required by PlayStation prompts. Ordinary play leaves the pack disabled.
+Other enabled mods under that title folder can still load; do not combine a randomizer with co-op without separate testing.
+The password is passed in the child process environment and is not saved by the launcher. Hosting remains a separate action.
+
 Longshot additionally keeps the game's menus ahead of the co-op panel for mouse clicks/wheel events.
-The companion's automated tests passed; a two-player gameplay run, save synchronization, puppets and disconnect recovery
-still require acceptance testing in the combined Longshot game.
+The companion's automated tests passed. A single game joined an encrypted loopback server, loaded a copied Deku Tree save,
+rendered the scene, accepted movement and exited cleanly. Two-player synchronization, remote puppets and reconnect still need testing.
+
+### Full randomizer / Archipelago tools (OoTrR)
+
+OoTrR is an additional optional companion; it does not replace the simpler randomizer or its existing seeds.
+Its newly MIT-licensed pin includes a progression-logic randomizer, save/live tracking and Archipelago tools.
+Logic verification is not equivalent to completing a seed in the actual remake.
+
+```powershell
+python -I scripts/longshot_companions.py build ootrr
+python -I scripts/longshot_companions.py test ootrr
+python -I scripts/longshot_companions.py launch ootrr --game "<experimental game folder>"
+```
+
+Prepare a **separate built game** at `<experimental game folder>/longshot-modes/ootrr`, with its own executable,
+options, caches, mods and saves. Its `longshot-mode.json` must contain `{"schema":1,"mode":"ootrr"}`. Game assets
+can be shared read-only by normal play; do not run an asset-writing Builder against a shared RomFS junction.
+The launcher refuses to substitute the ordinary game when this mode installation is absent. Build the dependency
+environment before choosing **Full randomizer** in the launcher.
+
+Choose your local game package in the companion. Seeds install only into this mode game's `mods` folder; its live tracker
+can attach only to that mode's `hookshot.exe`. Start that dedicated executable to play a generated seed, beginning a new
+playthrough as the seed requires. Your ordinary saves are not imported. The integration disables OoTrR's automatic
+controller remapping to preserve existing bindings. Multiworld needs explicit server/slot setup and remains experimental;
+no server connection or public hosting is started by these preparation commands.
 
 ## Builds and updates
 

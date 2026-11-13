@@ -112,12 +112,12 @@
   {
     "repository": "Mozencaz/OotrR",
     "url": "https://github.com/Mozencaz/OotrR",
-    "reviewed_commit": "ddf9a98d986fbdff36305b5b1f03c5a26207b46d",
-    "retrieved_utc": "2026-11-13T15:26:41.061527+00:00",
+    "reviewed_commit": "fdc2b2f26ba146b60f565aa83892ccd8bb25acdc",
+    "retrieved_utc": "2026-11-13T18:00:22.318052+00:00",
     "stars_at_review": 4,
-    "reported_license": "Unverified",
+    "reported_license": "MIT",
     "access_error": null,
-    "decision": "Randomizer candidate with no verified license grant; no source copied."
+    "decision": "MIT license added after the initial review. Integrated as a pinned optional full randomizer, with separate game/mod/process boundaries and automatic controller-remapping disabled."
   },
   {
     "repository": "Smeef123/OoTRemakeRando",
@@ -438,5 +438,25 @@
     "reported_license": "Unverified",
     "access_error": "gh: Not Found (HTTP 404)",
     "decision": "Original URL returned 404. Surviving mirrors and shared Hookshot pipeline-source provenance used instead."
+  },
+  {
+    "repository": "MagicBeanDev/Longshot",
+    "url": "https://git.magicbean.dev/MagicBeanDev/Longshot",
+    "reviewed_commit": "fbd420241afdba1d5ba2936971eb48549edb85ae",
+    "stars_at_review": 21,
+    "retrieved_utc": "2026-11-13T18:00:22.318052+00:00",
+    "reported_license": "GPL-3.0",
+    "access_error": null,
+    "decision": "Distinct Team MagicBean community project, not BaileyPillon/Longshot. Reviewed release/feature history; no wholesale merge of its diverged runtime or replacement of this fork. Save importer, profile separation and launcher workflows independently covered here."
+  },
+  {
+    "repository": "MagicBeanDev/LongshotLauncher",
+    "url": "https://git.magicbean.dev/MagicBeanDev/LongshotLauncher",
+    "reviewed_commit": "0e6e1d78210e4c79efecc04e8b27ba7a288ec3b7",
+    "stars_at_review": 2,
+    "retrieved_utc": "2026-11-13T18:00:22.318052+00:00",
+    "reported_license": "GPL-3.0",
+    "access_error": null,
+    "decision": "Distinct Team MagicBean community project, not BaileyPillon/Longshot. Reviewed release/feature history; no wholesale merge of its diverged runtime or replacement of this fork. Save importer, profile separation and launcher workflows independently covered here."
   }
 ]

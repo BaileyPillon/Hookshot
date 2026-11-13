@@ -7,3 +7,6 @@
 [submodule "integrations/tracker"]
 	path = integrations/tracker
 	url = https://github.com/LucieTheFool/boomerang-tracker.git
+[submodule "integrations/ootrr"]
+	path = integrations/ootrr
+	url = https://github.com/Mozencaz/OotrR.git

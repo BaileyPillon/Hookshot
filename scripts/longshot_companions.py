@@ -83,6 +83,24 @@ def game_folder(path):
 def launch_plan(name, directory, game=None, saves=None):
     env = dict(os.environ)
     env.pop("ELECTRON_RUN_AS_NODE", None)
+    if name == "ootrr":
+        if not game:
+            raise ValueError("Full randomizer requires --game <experimental game folder>")
+        # Never install its seeds or attach its live tracker to ordinary play.
+        mode_game = game_folder(Path(game) / "longshot-modes/ootrr")
+        marker = mode_game / "longshot-mode.json"
+        if not marker.is_file() or json.loads(marker.read_text()).get("mode") != "ootrr":
+            raise ValueError("Prepare the separate full-randomizer game first; see docs/longshot-features.md")
+        python = directory / ".venv" / ("Scripts/python.exe" if os.name == "nt" else "bin/python")
+        if not python.is_file():
+            raise ValueError("Build the full randomizer first: longshot_companions.py build ootrr")
+        env["LONGSHOT_OOTRR_GAME"] = str(mode_game)
+        key = hashlib.sha256(str(mode_game).encode()).hexdigest()[:12]
+        env["LONGSHOT_OOTRR_DATA"] = str(directory / "build/longshot" / key)
+        env["HOS_COOP"] = "0"
+        env.pop("HOS_FS_OVERLAY", None)
+        env.pop("HOS_MODS", None)
+        return [str(python), "-I", "-m", "oot_rando"], env
     if name == "randomizer":
         if sys.version_info < (3, 14):
             raise ValueError("The randomizer requires Python 3.14 or newer (compression.zstd)")
@@ -104,7 +122,7 @@ def launch_plan(name, directory, game=None, saves=None):
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("action", choices=("status", "prepare", "build", "test", "launch"))
-    parser.add_argument("companion", choices=("oot-coop", "randomizer", "tracker"))
+    parser.add_argument("companion", choices=("oot-coop", "randomizer", "ootrr", "tracker"))
     parser.add_argument("--game", type=Path)
     parser.add_argument("--saves", type=Path)
     parser.add_argument("--cmake", default="cmake")
@@ -133,9 +151,22 @@ def main(argv=None):
             command, env = launch_plan(args.companion, directory, args.game, args.saves)
             if args.dry_run:
                 print(json.dumps({"command": command, "cwd": str(directory), "environment":
-                                  {k: env[k] for k in ("OOT_GAME", "OOT_SAVE_DIR", "OOT_USER_DATA", "HOS_COOP") if k in env}}, indent=2))
+                                  {k: env[k] for k in ("OOT_GAME", "OOT_SAVE_DIR", "OOT_USER_DATA", "HOS_COOP",
+                                                       "LONGSHOT_OOTRR_GAME", "LONGSHOT_OOTRR_DATA") if k in env}}, indent=2))
             else:
                 subprocess.Popen(command, cwd=directory, env=env)
+        elif args.companion == "ootrr":
+            python = directory / ".venv" / ("Scripts/python.exe" if os.name == "nt" else "bin/python")
+            if args.action == "build":
+                if not python.exists():
+                    run([sys.executable, "-I", "-m", "venv", directory / ".venv"])
+                run([python, "-I", "-m", "pip", "install", "-r", ROOT / "integrations/ootrr-requirements.txt"])
+                run([python, "-I", "-m", "pip", "install", "--no-deps", "-e", directory])
+            else:
+                if not python.is_file():
+                    raise ValueError("Build ootrr first")
+                run([python, "-I", "-m", "unittest", "discover", "-s", directory / "tests", "-v"], directory)
+                run([python, "-I", "-m", "oot_rando", "selftest"], directory)
         elif args.companion == "tracker":
             npm = tool("npm")
             if args.action == "build":

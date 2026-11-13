@@ -130,6 +130,7 @@ def launch_plan(game, number=1, romfs=None):
     env = dict(os.environ)
     env["HOS_COOP"] = "0"
     env.pop("HOS_FS_OVERLAY", None)
+    env.pop("HOS_MODS", None)
     # Explicit --user wins over saved menu/environment profile selection on both platforms.
     return [str(executable), str(image), "--romfs", str(assets), "--user", str(user)], env
 
@@ -139,6 +140,52 @@ def start_game(game, number=1, romfs=None):
     command, env = launch_plan(game, number, romfs)
     # Explicit --user bypasses native profile directory creation. Create all parents
     # before the game starts, including a profile's first-ever launch.
+    user = profile_folder(game, number)
+    user.mkdir(parents=True, exist_ok=True)
+    plain_path(user)
+    return subprocess.Popen(command, cwd=game, env=env)
+
+
+def coop_launch_plan(game, number, server, port, name, password, romfs=None):
+    """Join with a separate profile and the normal puppet mod loader; never start a server."""
+    if number == 1:
+        raise ValueError("Choose a separate co-op profile from 2 through 9")
+    command, env = launch_plan(game, number, romfs)
+    if not re.fullmatch(r"[A-Za-z0-9._-]{1,253}", server):
+        raise ValueError("Enter the server's host name or IPv4 address, without a URL or port")
+    if isinstance(port, bool) or not isinstance(port, int) or not 1 <= port <= 65535:
+        raise ValueError("Enter a server port from 1 to 65535")
+    if not 1 <= len(name) <= 16 or any(ord(c) < 32 or ord(c) == 127 for c in name):
+        raise ValueError("Use a player name of 1 to 16 characters, without control characters")
+    if not password or len(password.encode("utf-8")) > 128 or any(ord(c) < 32 or ord(c) == 127 for c in password):
+        raise ValueError("Enter the session password (1 to 128 UTF-8 bytes, without control characters)")
+    binary_folder = Path(command[0]).parent
+    module = plain_path(binary_folder / "hookshot_coop.dll", directory=False)
+    if not module.is_file():
+        raise ValueError("Build and install the pinned co-op module beside the experimental game executable first")
+    pack = plain_path(binary_folder / "mods/contents/0400486024DEC000/coop-puppet")
+    for required in ("romfs", "coop_puppet.json", "coop_rooms.txt", "coop_hud/hud.json"):
+        path = plain_path(pack / required, directory=(required == "romfs"))
+        if not path.exists():
+            raise ValueError("Generate the co-op puppet pack in mods/contents/0400486024DEC000/coop-puppet first")
+    # The marker stays on disk. Exact co-op opt-in enables only this named pack
+    # under the scoped mod root, preserving the native prompt-size-table merge.
+    if not (pack / ".longshot-disabled").is_file():
+        raise ValueError("Disable the coop-puppet mod in Manage mods before joining; co-op loads it for this session")
+    env = {k: v for k, v in env.items() if not k.startswith("LICHII_COOP_")}
+    env.update(HOS_COOP="1", HOS_MODS=str(pack.parent),
+               LICHII_COOP_SERVER=server, LICHII_COOP_PORT=str(port),
+               LICHII_COOP_NAME=name, LICHII_COOP_PASSWORD=password,
+               LICHII_COOP_HOST_SAVE="0", LICHII_COOP_PUPPET="1",
+               LICHII_COOP_OBJECTS="1", LICHII_COOP_SPAWN="1", LICHII_COOP_CHEATS="0")
+    return command, env
+
+
+def start_coop(game, number, server, port, name, password, romfs=None):
+    if os.name != "nt":
+        raise ValueError("The pinned native co-op module currently requires Windows")
+    closed_games()
+    command, env = coop_launch_plan(game, number, server, port, name, password, romfs)
     user = profile_folder(game, number)
     user.mkdir(parents=True, exist_ok=True)
     plain_path(user)

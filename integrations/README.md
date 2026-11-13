@@ -8,6 +8,7 @@ Each submodule retains its own license and attribution. Initialize them with `gi
 |---|---|---|---|
 | [oot-remake-multiplayer](https://github.com/daurosk/oot-remake-multiplayer) | `f5e4ca3b407197349af3045abff4bb7475ac2fd8` | GPL-3.0 | Native bridge/lifter/renderer patches plus optional module |
 | [Hookshot Randomized](https://github.com/KAMOX06/hookshot-randomized) | `91f301987e8f67b5239bb22429137077a1e330d0` | MIT | Isolated source preparation and launcher |
+| [OoTrR](https://github.com/Mozencaz/OotrR) | `fdc2b2f26ba146b60f565aa83892ccd8bb25acdc` | MIT; retains Archipelago OoT attribution | Optional full randomizer and multiworld tools in a dedicated mode installation |
 | [Boomerang Tracker](https://github.com/LucieTheFool/boomerang-tracker) | `0fb33437e620adb3d3634f28ed7650c20bb2361c` | MIT | Isolated source preparation, build and save-folder-aware launcher |
 
 The co-op source patches `hookshot/patches/0001-coop-bridge.patch`, `0002-coop-puppets.patch`, and
@@ -22,6 +23,11 @@ the source submodule's reviewed revision. Upstream's MIT license also applies to
 
 The independent save-profile, launcher, hardware-advice and mod-manager implementations are part of Longshot under its repository license.
 They use workflow ideas from the research, not reserved NX2navi additions or Mako's restricted controller artwork.
+
+`patches/ootrr-isolation.patch` restricts managed OoTrR mod installation and live-process selection to its dedicated
+game folder, separates its app data, and turns off its automatic Turbo A controller remapping and startup update check.
+Its original source pin stays untouched. `ootrr-requirements.txt` pins the runtime dependencies, including the transitive
+hashing dependency. Longshot does not connect to an Archipelago server automatically.
 
 See [usage and limits](../docs/longshot-features.md), [research](../docs/longshot-fork-research.md) and
 [validation](../docs/longshot-validation.md). No game-derived cache, overlay, puppet pack, save or secret belongs here.

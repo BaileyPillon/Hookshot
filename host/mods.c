@@ -119,7 +119,14 @@ static void find_mods(const char *dir, const char *name, int depth) {
     const DWORD attr = GetFileAttributesA(dir);
     if (attr != INVALID_FILE_ATTRIBUTES && (attr & FILE_ATTRIBUTE_REPARSE_POINT)) return;
     snprintf(probe, sizeof probe, "%s\\.longshot-disabled", dir);
-    if (GetFileAttributesA(probe) != INVALID_FILE_ATTRIBUTES) {
+    /* The launcher scopes HOS_MODS to the puppet pack's parent for a co-op
+       session. Use the normal loader so its size table is merged with PS5
+       prompts; HOS_FS_OVERLAY bypasses that merge and can crash font loading.
+       The on-disk disabled marker remains authoritative for ordinary play. */
+    const char *coop = getenv("HOS_COOP");
+    const int coop_pack = depth == 1 && !strcmp(name, "coop-puppet") &&
+                          getenv("HOS_MODS") && coop && !strcmp(coop, "1");
+    if (GetFileAttributesA(probe) != INVALID_FILE_ATTRIBUTES && !coop_pack) {
         hos_log("mods: %s is disabled by Longshot", name);
         return;
     }

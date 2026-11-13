@@ -4,7 +4,7 @@ Research date: **13 November 2026**. Stars, availability and default branches ar
 
 ## Method and coverage
 
-The survey collected **44 repository records** (41 accessible; three returned 404), including source trees, README claims,
+The survey collected **46 repository records** (43 accessible; three returned 404), including source trees, README claims,
 licenses, default-head revisions, recent commits and releases. GitHub's direct fork inventories supplied **1,379 Lichii
 fork records** and **274 NX2navi fork records** for candidate discovery. These are metadata inventories, not 1,653
 individually audited codebases or necessarily unique projects. The table below is the reviewed shortlist, selected for
@@ -31,9 +31,9 @@ called NX2navi an emulator and ocarina-recomp an N64 port; their own architectur
 | Pipeline warming / stutter reduction | Hookshot `333fa02` incorporates 11,985 pipeline descriptions from Fritchii's recipe; newer pipeline/program/memory fixes also included. | Descriptions hold state/hashes, not game shader code. Shader work is rebuilt locally; community shader blobs not imported. |
 | Profile isolation | Nine-profile workflow from zelda-oot-perfis, independently implemented in `host/save_profile.c` and the native menu. | Restart required; explicit `--user` wins; no live save switching. |
 | Mod manager | Independent native loader order/disable support plus CLI and Tk GUI, with conflict winner reports and optional title/build metadata. | File-level RomFS overlays only; no ExeFS or archive merging. Lichii-Enhanced's advertised manager was not real source at its reviewed revision. |
-| Smaller configurable FPS display | Independent native-menu option, 50–150%, using upstream's rich FPS/frametime overlay. | No in-game measurement of the new combined renderer yet. |
+| Smaller configurable FPS display | Independent native-menu option, 50–150%, using upstream's rich FPS/frametime overlay. | Runtime readback retained 70%, top right. Physical controller navigation and multiple resolutions remain unverified. |
 | Co-op | GPL source bridge patches from the pinned oot-remake-multiplayer revision; its Hookshot base pin exactly matches this merge. | Optional, exact opt-in, fresh game lift needed; two-player gameplay acceptance pending. |
-| Randomizer | Pinned MIT Hookshot Randomized companion, exported/started by Longshot's companion tool. | No progression solver; possible unbeatable seeds. No event-gift shuffle or proven co-op combination. |
+| Randomizers | Pinned MIT Hookshot Randomized plus the newly MIT-licensed OoTrR progression-logic companion. The latter gets a separate game, mods, app data and live-process boundary. | Simple shuffle has no solver. OoTrR's local seed passed logic replay; a complete randomized playthrough and Archipelago delivery remain unverified. Neither is validated with co-op. |
 | Completion tracker | Pinned MIT Boomerang companion; save-folder-aware launcher and build/test fixes. | Read-only save interpretation; uncertain mappings/manual identification remain. |
 | Developer access | Upstream local control bridge, observation/bug-report tools plus retained Longshot checkpoint foundation. | Not OpenGOAL-style arbitrary hot reload or a new in-game checkpoint browser. |
 | Launcher and resilient saves | Independently implemented game/profile/companion launcher, verified import into new profiles, native-save checkpoint browser and CPU/RAM/GPU advice. Mako and Ocarina Recomp migration workflows informed the design. | Original saves and existing profiles are never overwritten; advice does not automatically change settings. Not live-memory or pause-menu quicksave. |
@@ -60,8 +60,38 @@ Mako's partial Master Quest content needs its own code/data/provenance review an
 HeyListen's engine/job redesign requires a separate architectural evaluation rather than overlapping two render backends.
 Android, PS5, Steam Deck, ROG Ally, BC-250, Intel Arc and AMD-specific presets are not applied to a Windows/NVIDIA PC.
 Reserved/unlicensed source, distributed game-derived caches, ROM assets and restricted artwork are excluded.
-No full randomizer logic solver, online matchmaking service, achievements backend, split-screen mode, arbitrary hot reload
-or full-memory save-state implementation was established as a compatible, licensed drop-in feature by this research.
+The later OoTrR license grant made its logic solver and Archipelago tools eligible for optional integration. No online
+matchmaking service, achievements backend, split-screen mode, arbitrary hot reload or full-memory save-state implementation
+was established as a compatible, licensed drop-in feature by this research.
+
+## Reddit follow-up: demand, disagreements and implementation
+
+The November 13 follow-up examined accessible posts and comments in r/decomps, r/SwitchPirates2 and r/OcarinaOfTime,
+including release discussions, comparative hardware reports and the authors' co-op/randomizer/tracker announcements.
+This is a qualitative sample, not a poll of all players. Search indexing, incomplete comment expansion, fast-moving
+releases and differing hardware limit any claim of consensus. A popular announcement proves interest, not reliability.
+
+| Theme | Community evidence | Longshot decision |
+|---|---|---|
+| Frame pacing and retained shader preparation | The [November 12–13 comparison](https://www.reddit.com/r/decomps/comments/1xus8qd/after_1_week_of_game_releasewhich_way_offers_best/) repeatedly discusses stutter, shader preparation and repeated rebuilds. Players disagree on which runtime performs best. | Keep locally generated shader/pipeline preparation and the shared Fritchii recipe. Measure this PC; do not adopt another user's cache or claim a universal FPS winner. |
+| Save migration and preservation | [Save-transfer questions](https://www.reddit.com/r/SwitchPirates2/comments/1xtaz11/transfer_saves_between_hookshot_and_fritchii_or/) recur in the [2.2 release discussion](https://www.reddit.com/r/SwitchPirates2/comments/1xuv86o/hookshot_v_220rc1_tested_no_more_memory_leak/). Manual folder replacement advice risks confusing profiles. | Verified import into unused profiles, source preservation, checkpoint capture/browser/restore; both `.hsc` and early `.state` archives recognized. |
+| Controller prompts, bindings and shortcuts | The comparison specifically praises appropriate controller prompts; the [2.0.12 discussion](https://www.reddit.com/r/SwitchPirates2/comments/1xsjctr/hookshot_v2012_released/) covers prompts, gyro, deadzones and menu access. | Retain PS5 prompts, remapping, radial deadzones, gyro and menu shortcuts from the shared native implementation. Preserve the user's bindings when adding companions. |
+| Co-op with accessible setup | The [co-op author's announcement](https://www.reddit.com/r/decomps/comments/1xuw3wk/ocarina_of_time_recomp_multiplayer/) describes crossplay, puppets and synchronization. Comments ask how to install it and request couch play; the author says couch play is not implemented. | Matching-base native bridge plus pinned module; add a join form, password validation and a separate profile. The puppet pack stays disabled for ordinary play. No automatic public server, router change or claim of split-screen. |
+| Completion assistance | [Boomerang's author](https://www.reddit.com/r/OcarinaOfTime/comments/1xtthaw/boomerang_tracker_a_save_progress_tracker_for_the/) describes save-based tracking and explicitly calls it a work in progress. | Keep the pinned tracker and explicit save selection. Do not describe its reviewed revision as live memory tracking or a fully verified walkthrough. |
+| Deeper randomization / multiworld | [OoTrR's announcement](https://www.reddit.com/r/OcarinaOfTime/comments/1xu81uk/ocarina_of_time_remake_randomizer/) and its [cross-post](https://www.reddit.com/r/SwitchPirates2/comments/1xu892p/randomizer_for_the_remake/) show interest in a logic-based randomizer and Archipelago. The discussion is small, so this is a noteworthy option, not broad consensus. | The maintainer added MIT at `fdc2b2f` after our initial no-license review. Add it as an optional pinned companion alongside the simpler randomizer; isolate its game, mods and live-process target, and disable automatic Turbo A remapping. |
+| HDR, frame generation and memory usage | [NX2navi hardware reports](https://www.reddit.com/r/SwitchPirates2/comments/1xuvx96/nx2navi_is_actually_legit_but_boy_does_it_need/) and the 2.2 discussion contain conflicting success, VRAM and artifact reports. | Feature availability is retained, but neither FG nor HDR becomes a default on the user's previously flickering setup. Reddit reports are not a replacement for a controlled test. |
+
+### The other project named Longshot
+
+The [Team MagicBean announcement](https://www.reddit.com/r/SwitchPirates2/comments/1xv7cuj/longshot_continuation_of_hookshot_by_developers/)
+links a separate [Longshot runtime](https://git.magicbean.dev/MagicBeanDev/Longshot) and
+[launcher](https://git.magicbean.dev/MagicBeanDev/LongshotLauncher). **Neither is BaileyPillon/Longshot.**
+Its maintainers advertise build/shader improvements, version management and save imports. We fetched its native-source
+history and checked the published launcher metadata. The runtime comparison spans 825 changed files relative to our
+co-op-compatible base, including renderer, builder and naming changes; it is not a small feature patch.
+Our launcher/profile/import workflow is already independent. A wholesale runtime replacement would require rebasing and
+revalidating the native co-op hooks and graphics behavior, so this research does not label all of that separate project's
+performance claims as implemented or verified here. No public auto-updater is redirected to overwrite this custom fork.
 
 ## Repository-by-repository record
 
@@ -71,6 +101,8 @@ README descriptions below are discovery evidence, not independent gameplay verif
 
 | Repository | Stars | Reviewed revision | Finding / decision |
 |---|---:|---|---|
+| [MagicBeanDev/Longshot](https://git.magicbean.dev/MagicBeanDev/Longshot) | 21 | `fbd420241afd` | Separate community continuation, not this fork. Reviewed native source and large runtime/builder divergence; no wholesale merge or unmeasured performance claim. |
+| [MagicBeanDev/LongshotLauncher](https://git.magicbean.dev/MagicBeanDev/LongshotLauncher) | 2 | `0e6e1d78210e` | GPL launcher/version-management reference. Longshot already has independent profile/import/companion tooling; no updater redirected between the two projects. |
 | [BaileyPillon/Longshot](https://github.com/BaileyPillon/Longshot) | 0 | [d481e1336dfb](https://github.com/BaileyPillon/Longshot/tree/d481e1336dfb2de7cc8c255e042c7843aa0f7070) | Our fork; retained its checkpoint/devtools work and advanced the upstream base. |
 | [NotRexed/Hookshot](https://github.com/NotRexed/Hookshot) | — | 404 | Original URL returned 404; recovered the exact v2.2.0-rc.1 revision through the surviving GitHub fork network. |
 | [Shakoquo/Mako](https://github.com/Shakoquo/Mako) | 27 | [348436cce81b](https://github.com/Shakoquo/Mako/tree/348436cce81b3d095ab2a312a0d8e63c267778b4) | AMD/foliage fixes, hardware-aware setup, Master Quest child-dungeon preview. Hardware advice, launcher and save-import workflow independently adapted; common upstream fixes retained. Restricted controller art and partial dungeon mode not imported. |
@@ -82,7 +114,7 @@ README descriptions below are discovery evidence, not independent gameplay verif
 | [evilmfkr/Evil_Hookshot](https://github.com/evilmfkr/Evil_Hookshot) | 8 | [82959d30fd98](https://github.com/evilmfkr/Evil_Hookshot/tree/82959d30fd9812005759ef30dfd2d9d7404c82c3) | Renderer/build compatibility work; shared upstream includes EvilOOT-derived build support. |
 | [mooki000/hookshot-workbench](https://github.com/mooki000/hookshot-workbench) | 1 | [58ccb6e57152](https://github.com/mooki000/hookshot-workbench/tree/58ccb6e5715209aea639d721b62ab47ca4df950e) | Developer tooling concept; use the newer native control/bug-report bridge already in the upstream merge. |
 | [LucieTheFool/boomerang-tracker](https://github.com/LucieTheFool/boomerang-tracker) | 0 | [0fb33437e620](https://github.com/LucieTheFool/boomerang-tracker/tree/0fb33437e620adb3d3634f28ed7650c20bb2361c) | Integrated as a pinned companion: read-only completion tracking, reachable-item suggestions, overlay and hotkeys; build/test fixes recorded. |
-| [Mozencaz/OotrR](https://github.com/Mozencaz/OotrR) | 4 | [ddf9a98d986f](https://github.com/Mozencaz/OotrR/tree/ddf9a98d986fbdff36305b5b1f03c5a26207b46d) | Randomizer candidate with no verified license grant; no source copied. |
+| [Mozencaz/OotrR](https://github.com/Mozencaz/OotrR) | 4 | [fdc2b2f26ba14](https://github.com/Mozencaz/OotrR/tree/fdc2b2f26ba146b60f565aa83892ccd8bb25acdc) | MIT added after the first review; integrated as an optional full-randomizer companion with dedicated game/mod/process boundaries. |
 | [Smeef123/OoTRemakeRando](https://github.com/Smeef123/OoTRemakeRando) | 3 | [b6b85b4303f2](https://github.com/Smeef123/OoTRemakeRando/tree/b6b85b4303f29e562b0bb4fc09752f01792e845e) | Randomizer candidate, unclear license metadata; chose the explicitly MIT Hookshot-specific implementation instead. |
 | [KAMOX06/hookshot-randomized](https://github.com/KAMOX06/hookshot-randomized) | 2 | [91f301987e8f](https://github.com/KAMOX06/hookshot-randomized/tree/91f301987e8f67b5239bb22429137077a1e330d0) | Integrated as pinned companion: chest/shop shuffle, skips, world-opening options, spoiler log and seed-specific saves. No progression solver. |
 | [daurosk/oot-remake-multiplayer](https://github.com/daurosk/oot-remake-multiplayer) | 93 | [f5e4ca3b4071](https://github.com/daurosk/oot-remake-multiplayer/tree/f5e4ca3b407197349af3045abff4bb7475ac2fd8) | Integrated exact-base GPL bridge and pinned module; opt-in co-op, remote puppets, sync and chat. Automated tests, not two-player gameplay, verified here. |

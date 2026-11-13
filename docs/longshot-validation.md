@@ -16,11 +16,23 @@ Branch: `feat/fork-feature-integration`. Upstream base: `4aee23659b9436dab2cd7be
 | Mod manager visual check | **Window, row selection, conflict winner and disable action observed** | Tested three authored synthetic mod folders; disabling one visibly changed the row to Off and enabled count from three to two. Screenshot in `docs/images/longshot-mod-manager.png`. |
 | Companion preparation | **Pinned archive export and compatibility patch applied** | Source exports stay under ignored `work/longshot-companions`; source submodules remain at the reviewed revisions. |
 | Launcher save operations | **12 tests passed** | Verified copies, original/profile isolation, first-launch creation of missing profile parents, rejection of incomplete/oversized saves and links, cleanup on simulated disk failure, and stopping publication when a game starts during import. |
+| Co-op join form backend | **16 launcher tests passed**, including the earlier 12 | Additional checks reject profile 1, invalid connection fields, missing module/pack metadata and a puppet pack active in ordinary play. The plan clears inherited test/cheat flags and keeps the password out of command arguments. No connection is implied by these tests. |
+| Full-randomizer integration | **4 boundary checks passed** | Missing mode installation fails closed; separate game/app-data target; rejected ordinary-game process and mod paths; managed Turbo A does not start or remap controller bindings. |
+| Pinned OoTrR + isolation patch | **351 tests run, 69 skipped, zero failures**; **59-module self-check passed** | 282 passing tests; skipped cases require local game data. Logic self-check loaded 1,136 location names. This alone does not prove an actual seed is beatable or Archipelago item delivery works in gameplay. |
 | Launcher visual/function check | **Capture and restore observed in the Tk window** | An authored synthetic save was captured, listed and restored into profile 2. The source still contained both slots; the restored profile contained only the selected slot. Hardware advice displayed the detected CPU, RAM and GPU without writing settings. |
 | GitHub checks for `30acd9279cd1` | **All applicable checks passed** | Both Windows/Linux source-test shards, checkpoints, SPIR-V/workflow checks, Windows renderer/Builder, full DLSS+FSR link check, and Linux AppImage build. Release publication was intentionally skipped on this draft PR. |
 | Randomizer with local game assets | **Seed 1132026 generated; independent overlay verifier returned OK** | Chest/shop shuffle and patch consistency against the actual build's assets. Verifier reported 174 chests, 141 changed, and 63/64 shop slots changed. Does not prove progression logic or beatability. |
 | Co-op asset generation | **Completed from the local RomFS** | Generated child/adult puppet packs, HUD, and room data (3,599 placements in 257 rooms / 12 dungeons). Files remain local and outside ordinary active mods. Not a two-player gameplay result. |
 | Tracker runtime | **Window opened and parsed an isolated copy of the actual save** | Displayed slot 03 / Inside the Deku Tree, three hearts and three Skulltulas. Source saves were not used as the tracker's writable settings directory. Full-game mapping accuracy and overlay during gameplay still need acceptance. |
+| Fresh full Windows build | **646 translation units; zero failures; executable and renderer linked** | Fresh lift with co-op hooks, the normal eight hot-code pieces at O2 with the shipped PGO profile, and NVIDIA NGX enabled. Final compilation reused completed objects and took 348 seconds, followed by 4 seconds linking the executable. Earlier manually invoked monolithic compilations were interrupted after discovering the omitted split step; their elapsed times are not normal build-time measurements. |
+| Experimental deployment | **Separate game folder, copied saves/settings/caches, shared read-only-use RomFS path** | The new executable, renderer, co-op module and regenerated controller prompts were installed separately from the regular play installation. NVIDIA DLSS initialization and the first-start preparation screen were observed. Frame generation and HDR remain off. This row alone does not prove gameplay. |
+| Combined-game runtime | **Copied Deku Tree save loaded; Link/camera moved; scene screenshots inspected; exit 0** | Windows 11 / 7800X3D / 64 GB / RTX 5070 Ti, driver 610.47. Source fingerprint `9e1287f9`. Twenty control-bridge samples over 40.5 s after movement: mean 53.55 FPS, range 3.9–60.5; the first 17 were 59.0–60.5. Stalls occurred and their cause is not established. This is not a before/after benchmark or proof of stutter-free play. |
+| Cache reuse | **Restart reused 46,673 program keys and five play-cache files; intro active at 8.7 s uptime** | Initial preparation took roughly 35 minutes; restart did not repeat it. A fresh 42,072-record shipped pipeline-state list was installed before that restart. |
+| Actual native-save checkpoint | **Slot 03 archived and restored into profile 3; native profile override mounted it; only slot 03 listed** | The original copied profile retained all six slots. The game loaded `InsideTheDekuTree` from the restored profile and exited 0. Checkpoints are native save snapshots tied to build identity, not live-memory states. |
+| Co-op runtime after fix | **One client connected over encrypted loopback; copied save loaded; movement and exit 0** | Source `ccd7a233`; server bound only to 127.0.0.1, then stopped. Module, HUD/font assets and 3,599-entry room table loaded. Server saw map/enemy-state messages. No second player, remote puppet, reconnect or multi-player save result is claimed. |
+| Co-op UI | **Join form inspected; all fields and password note fit** | Screenshot `docs/images/longshot-coop-join.png`; backend validation and runtime connection tested separately. |
+| OoTrR actual seed | **Seed longshot1132026: logic replay reported beatable, 32 spheres** | Generated from the user's local package into its dedicated mode; 1,136 location names loaded. A proof in the solver is not an actual completed campaign. |
+| Saved preferences | **Runtime readback retained PS5 prompts, 15% deadzone, text 2x, FPS 70% at top right, DLSS Quality, Reflex, FG/HDR off** | Game screenshots showed PlayStation prompts. Physical DualSense input and audible speaker output are not verified by settings readback. |
 
 Host toolchain: existing llvm-mingw from HookshotBuilder; co-op: Visual Studio 2022 x64/CMake; tracker: Node 24 and npm.
 The suite used the existing builder Python environment for its declared dependencies. This work did not change Windows,
@@ -41,6 +53,11 @@ GPU-driver, BIOS, monitor, or installed game's settings.
   save at test collection time. The recorded patch repairs the lock and defers that read to `beforeAll` without removing assertions.
 - The launcher explicitly supplies `--user`, bypassing the native menu profile selector. It now creates a new profile's
   parent directories before starting the game; the dedicated first-launch regression passes.
+- Actual co-op startup exposed a font-loading access violation: `HOS_FS_OVERLAY` replaced the resource size table after
+  the prompt-size merge. The join plan now uses `HOS_MODS` scoped to the puppet pack's parent. Exact `HOS_COOP=1` permits
+  that top-level `coop-puppet` marker for this session without changing it on disk. The normal loader merges the PS5 font
+  entry, the crash disappeared, and the client reached gameplay. A compiled fixture checks ordinary/invalid opt-in values
+  still leave it disabled. The incremental full-game rebuild compiled and linked without failures in 21 seconds.
 
 Before the merge, the older Longshot suite had 285 passes, four failures and 23 skips. Three old failures were missing/wrong
 toolchain or Python dependencies; the other was a Windows path fixture. The newer upstream tests and correct existing
@@ -48,17 +65,15 @@ toolchain/dependency environment resolve those. The differing test totals reflec
 
 ## Not yet verified in the combined game
 
-No new full-game executable was linked or deployed. The source integration requires a fresh game lift; reusing an old
-executable with only the new renderer does not validate it. Consequently the PR stays a **draft** pending:
+A new executable and matching renderer were freshly lifted, compiled and deployed to a separate experimental folder.
+The PR stays a **draft** while the following gameplay acceptance checks are completed:
 
-1. Fresh build from the user's local dump, using this source and the normal SDK choices, in a separate development game folder.
-2. Load an isolated copy of a save; verify play, sound, DualSense bindings, original checkpoint capture/restore and clean exit.
-3. Switch profiles with a restart; verify that each sees only its own progress, and `--user` still overrides profile selection.
-4. Inspect FPS size at multiple resolutions and actual controller navigation of the new native-menu rows.
-5. Two-player co-op on isolated saves: puppets, joining/leaving, inventory/progress consistency, reconnect and saving.
-6. Generate and verify a randomizer seed against the actual game build; play it. Synthetic round-trips do not prove seed beatability.
-7. Verify tracker recognition against actual saves and its overlay during gameplay.
-8. Before enabling frame generation/HDR, compare the same scene and check the prior blur/flicker symptoms. No FPS or stutter
+1. Physical DualSense input and audible speaker output; the controller was not detected during this run.
+2. FPS size at multiple resolutions and actual controller navigation of the new native-menu rows.
+3. Two-player co-op: remote puppets, inventory/progress consistency, reconnect and saving.
+4. Complete randomized progression and Archipelago delivery; seed generation, logic replay and a successful boot are narrower checks.
+5. Tracker mapping accuracy and overlay during extended gameplay.
+6. Before enabling frame generation/HDR, compare the same scene and check the prior blur/flicker symptoms. No FPS or stutter
    improvement has been measured, and no such improvement is claimed.
 
 Linux, other GPU vendors, handheld devices, reserved NX2navi code and incomplete Master Quest content are not represented as

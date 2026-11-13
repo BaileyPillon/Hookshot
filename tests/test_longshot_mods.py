@@ -68,6 +68,24 @@ class Manager(unittest.TestCase):
         (self.root / "A/longshot-mod.json").write_text('{"schema":1,"schema":2}')
         self.assertIn("Duplicate", mods.manifest_errors(self.root / "A")[0])
 
+    def test_native_coop_pack_uses_loader_only_with_exact_session_opt_in(self):
+        if not NATIVE:
+            self.skipTest("Windows native loader fixture")
+        root = Path(self.temp.name) / "coop-only"
+        pack = root / "coop-puppet"
+        file = pack / "romfs/Test/file.txt"
+        file.parent.mkdir(parents=True)
+        file.write_text("puppet")
+        (pack / mods.MARKER).write_text("")
+        for flag in ("", "0", "true", "1extra", "1"):
+            env = dict(os.environ, HOS_COOP=flag)
+            result = subprocess.run([str(NATIVE), str(root)], env=env, capture_output=True, text=True)
+            with self.subTest(flag=flag):
+                self.assertEqual(result.returncode, 0 if flag == "1" else 3)
+                if flag == "1":
+                    self.assertEqual(Path(result.stdout.strip()), file)
+        self.assertTrue((pack / mods.MARKER).exists())
+
     def test_native_winners(self):
         if not NATIVE:
             self.skipTest("Windows native loader fixture")
