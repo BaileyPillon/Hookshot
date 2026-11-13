@@ -216,6 +216,8 @@ playthrough as the seed requires. Your ordinary saves are not imported. The inte
 controller remapping to preserve existing bindings. Multiworld needs explicit server/slot setup and remains experimental;
 no server connection or public hosting is started by these preparation commands.
 
+![Configured full-randomizer companion](images/longshot-full-randomizer.png)
+
 ## Builds and updates
 
 Use the normal [development guide](development.md) to build the game. Keep this prerelease integration separate from

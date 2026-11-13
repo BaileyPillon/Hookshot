@@ -7,6 +7,7 @@ Branch: `feat/fork-feature-integration`. Upstream base: `4aee23659b9436dab2cd7be
 
 | Check | Result | What it proves |
 |---|---|---|
+| Final source sweep and failed-case reruns | **494 checks passed across the sweep and reruns; 43 skipped; no unresolved failures** | The full sweep took 687 s with a game running: 490 passed, two compiler setup failures and two 60 s fixture timeouts. Setting the existing `HOOKSHOT_MINGW` fixed `fpx_sticky` and `spawn_emit` (56/58 s). After the game closed, unchanged `exclusive_marks` and `fallback_buffer_cleanup` passed serially in 19 s. This is not a single clean 494-pass run; no assertion or timeout was weakened. |
 | Full `python -I -B tests/run_all.py --jobs 3` after launcher additions | **493 passed, 0 failed, 43 skipped**, 506 seconds | Game-free host, renderer, tools, existing checkpoint/devtools and source regression checks. Skips include Linux-only cases, missing .NET/spirv-val and other declared unavailable dependencies. Run alongside the fresh game compilation. |
 | New/affected focused group | **11 passed, 0 failed**, 15 seconds | Profile isolation; mod-manager/native-loader agreement; co-op opt-in/build guards; randomizer synthetic formats and seed-save isolation; overlay/input/present/screensaver regressions. |
 | Windows Vulkan renderer build | **206 translation units compiled; 0 failed; DLL linked**, 179 seconds | The combined Vulkan/menu/co-op overlay source builds with the available llvm-mingw toolchain. This validation build did not enable the optional NGX/FSR SDKs. |
@@ -32,11 +33,16 @@ Branch: `feat/fork-feature-integration`. Upstream base: `4aee23659b9436dab2cd7be
 | Co-op runtime after fix | **One client connected over encrypted loopback; copied save loaded; movement and exit 0** | Source `ccd7a233`; server bound only to 127.0.0.1, then stopped. Module, HUD/font assets and 3,599-entry room table loaded. Server saw map/enemy-state messages. No second player, remote puppet, reconnect or multi-player save result is claimed. |
 | Co-op UI | **Join form inspected; all fields and password note fit** | Screenshot `docs/images/longshot-coop-join.png`; backend validation and runtime connection tested separately. |
 | OoTrR actual seed | **Seed longshot1132026: logic replay reported beatable, 32 spheres** | Generated from the user's local package into its dedicated mode; 1,136 location names loaded. A proof in the solver is not an actual completed campaign. |
+| OoTrR game and companion | **New game booted, opening and Kokiri Forest cutscene rendered; exit 0; companion opened seed and reported live tracking On** | Separate game had 96 active RomFS files and merged the PS5 font table. The companion recognized the package and dedicated mods directory; its setup confirmed automatic Turbo A disabled. Cutscenes had substantial stalls while source tests were also running; no smooth-play claim or completed randomized progression. |
 | Saved preferences | **Runtime readback retained PS5 prompts, 15% deadzone, text 2x, FPS 70% at top right, DLSS Quality, Reflex, FG/HDR off** | Game screenshots showed PlayStation prompts. Physical DualSense input and audible speaker output are not verified by settings readback. |
+| Final ordinary-mode launch | **Current-build checkpoint restored into profile 4, loaded and rendered Deku Tree; co-op logged Off; exit 0** | Source `ccd7a233`. Twelve stationary bridge samples after loading: mean 38.88 FPS, range 36.2–45.0. This differs from the earlier moved-camera sample and is not an A/B benchmark. Performance remains an acceptance concern; this branch is not promoted over the regular game. |
 
 Host toolchain: existing llvm-mingw from HookshotBuilder; co-op: Visual Studio 2022 x64/CMake; tracker: Node 24 and npm.
 The suite used the existing builder Python environment for its declared dependencies. This work did not change Windows,
 GPU-driver, BIOS, monitor, or installed game's settings.
+The regular installation's executable, renderer, options and environment-file hashes matched the pre-test baseline.
+Separate local desktop shortcuts were created for the experimental launcher and full-randomizer game; the source PR itself
+does not install shortcuts or contain the user's package paths, seeds, caches or saves.
 
 ## Findings fixed during integration
 
