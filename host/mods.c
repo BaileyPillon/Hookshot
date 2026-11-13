@@ -2,8 +2,8 @@
      <mods>/<name>/romfs/...          files that replace (or add to) the game's RomFS
    <mods> is the "mods" folder beside the executable, or HOS_MODS=<dir>. A mod may sit deeper, as emulators keep them
    (<mods>/contents/<title id>/<name>/romfs): any folder holding a romfs or exefs folder is a mod. Folders whose names
-   start with '-' or '_' are left out (off). When two mods have the same file, the one whose path sorts last wins (name
-   them 01-..., 02-... to order them). The resource size table that wins gets the button prompts' entries merged into it
+   start with '-' or '_' or contain .longshot-disabled are left out (off). longshot-order.txt lists priority from first
+   to last; unlisted mods sort alphabetically first. The last enabled layer wins. The resource size table gets the button prompts' entries merged into it
    (prompts.c), so the prompts' larger files still fit.
    Every mod file is indexed once at the start (no disk lookups per open); nn_fs.c asks hos_mods_romfs for each rom:
    path and lists a folder's mod-only entries with the game's own (hos_mods_dir_extras). HOS_FS_OVERLAY (nn_fs.c) is
@@ -111,11 +111,18 @@ static int index_romfs(const char *host_dir, const char *rel, int depth) {
 }
 
 /* the mod folders under root, sorted (a mod: a folder holding romfs or exefs) */
-typedef struct { char path[MAX_PATH]; char name[MAX_PATH]; } Mod;
+typedef struct { char path[MAX_PATH]; char name[MAX_PATH]; int order; } Mod;
 static Mod *mods;
 static int nmods, cap_mods;
 static void find_mods(const char *dir, const char *name, int depth) {
     char probe[MAX_PATH];
+    const DWORD attr = GetFileAttributesA(dir);
+    if (attr != INVALID_FILE_ATTRIBUTES && (attr & FILE_ATTRIBUTE_REPARSE_POINT)) return;
+    snprintf(probe, sizeof probe, "%s\\.longshot-disabled", dir);
+    if (GetFileAttributesA(probe) != INVALID_FILE_ATTRIBUTES) {
+        hos_log("mods: %s is disabled by Longshot", name);
+        return;
+    }
     snprintf(probe, sizeof probe, "%s\\romfs", dir);
     const int has_romfs = GetFileAttributesA(probe) != INVALID_FILE_ATTRIBUTES;
     snprintf(probe, sizeof probe, "%s\\exefs", dir);
@@ -124,6 +131,7 @@ static void find_mods(const char *dir, const char *name, int depth) {
         if (nmods == cap_mods) mods = (Mod *)realloc(mods, sizeof *mods * (size_t)(cap_mods = cap_mods ? cap_mods * 2 : 16));
         snprintf(mods[nmods].path, MAX_PATH, "%s", dir);
         snprintf(mods[nmods].name, MAX_PATH, "%s", name);
+        mods[nmods].order = -1;
         nmods++;
         return;
     }
@@ -146,7 +154,33 @@ static void find_mods(const char *dir, const char *name, int depth) {
     } while (FindNextFileA(f, &fd));
     FindClose(f);
 }
-static int mod_cmp(const void *a, const void *b) { return _stricmp(((const Mod *)a)->name, ((const Mod *)b)->name); }
+static int mod_cmp(const void *a, const void *b) {
+    const Mod *x = (const Mod *)a, *y = (const Mod *)b;
+    if (x->order != y->order) return x->order < y->order ? -1 : 1;
+    return _stricmp(x->name, y->name);
+}
+
+/* UTF-8 relative folder names, one per line. Last enabled layer wins; unlisted mods keep alphabetical order first. */
+static void mod_order(const char *root) {
+    char path[MAX_PATH], line[MAX_PATH + 2];
+    if (snprintf(path, sizeof path, "%s\\longshot-order.txt", root) >= (int)sizeof path) return;
+    FILE *f = fopen(path, "r");
+    if (!f) return;
+    int rank = 0;
+    while (fgets(line, sizeof line, f)) {
+        size_t n = strlen(line);
+        if (n == sizeof line - 1 && line[n - 1] != '\n') {
+            int c; while ((c = fgetc(f)) != '\n' && c != EOF) {}
+            continue;
+        }
+        while (n && (line[n - 1] == '\r' || line[n - 1] == '\n')) line[--n] = 0;
+        if (!n || line[0] == '#') continue;
+        for (size_t k = 0; k < n; k++) if (line[k] == '\\') line[k] = '/';
+        for (int i = 0; i < nmods; i++) if (!_stricmp(line, mods[i].name)) mods[i].order = rank;
+        if (rank < 1000000) rank++;
+    }
+    fclose(f);
+}
 
 /* hos_main.c, once the image is loaded (image_path: kept for exefs patches, which are not applied here) */
 void hos_mods_init(const char *image_path) {
@@ -166,6 +200,7 @@ void hos_mods_init(const char *image_path) {
         hos_log("mods: none in %s (a mod: <name>\\romfs)", root);
         return;
     }
+    mod_order(root);
     qsort(mods, (size_t)nmods, sizeof *mods, mod_cmp);
     for (int i = 0; i < nmods; i++) {
         char dir[MAX_PATH];

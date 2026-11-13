@@ -1,3 +1,8 @@
+> **Longshot development fork:** the `feat/fork-feature-integration` branch combines the Hookshot v2.2.0-rc.1 foundation
+> with save profiles, an adjustable FPS display, a mod manager, optional co-op, a randomizer and a completion tracker.
+> Read [features and setup](docs/longshot-features.md), [the fork research](docs/longshot-fork-research.md), and
+> [validation and pending gameplay checks](docs/longshot-validation.md). This is not a tested replacement for a stable play installation.
+
 <h1 align="center">
   <br>
   <a>
@@ -356,6 +361,7 @@ HDR, Detail, and GPU and memory (last: the rows to change when something is wron
 | | Audio output | Auto, Stereo, 5.1 (after a restart) | Auto |
 | Gameplay | FPS counter | Off, FPS, Frame time, Graph, Breakdown | Off |
 | | FPS counter position | Top right, Top left, Bottom right, Bottom left | Top right |
+| | FPS counter size | 50% to 150%, independently of Menu size | 100% |
 | | Menu size | Small, Medium, Large | Medium |
 | | Game speed | Per frame, Real time | Real time |
 | | Field of view | 50% to 150%, in steps of 5; applies immediately during gameplay | 100% (original) |
@@ -366,6 +372,7 @@ HDR, Detail, and GPU and memory (last: the rows to change when something is wron
 | | Menu language | Auto (the game's language), or English, Português (Brasil), Español (Latinoamérica), Español (España), Français, Deutsch, Italiano, Nederlands, Polski, Русский, 日本語, 한국어, 简体中文, 繁體中文 | Auto |
 | | Discord status | Off, On ("Playing Hookshot" and the time played in your Discord status, while Discord runs on this PC) | On |
 | | Skip opening | Off, On (skips the new-game opening: the story movie and Navi waking Link; later cutscenes and the title screen stay) | Off |
+| | Save profile | 1 (original saves), or separate playthroughs 2 to 9; switch after saving and restarting | 1 |
 | | Bug report | Saves a report into a new folder in `bug-reports` (below) | |
 | Controls | Controller in background | Off, On | Off |
 | | Mouse camera | As the stick, Native | As the stick |

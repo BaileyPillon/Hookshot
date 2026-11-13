@@ -36,6 +36,8 @@ static volatile LONG64 presents, shown_count;
 static volatile uint64_t hos_mkw_pacer;
 static uint32_t guest32;
 static int scans, steps, sleeps, reads;
+static int coop_presents;
+void hos_coop_present(void) { ++coop_presents; }
 static int64_t clock_now;
 typedef struct { int unused; } nvn_tex;
 typedef struct { int ntex, crop[4], presents; } nvn_win;
@@ -89,7 +91,7 @@ int main(int argc, char **argv) {
             if (lines != 5) return 2; /* header + four returned frames flushed after the stall */
         }
     }
-    if (presents != 5 || shown_count != 5 || scans != 5 || steps != 5 || sleeps != 0 ||
+    if (coop_presents != 5 || presents != 5 || shown_count != 5 || scans != 5 || steps != 5 || sleeps != 0 ||
         reads != (enabled ? 25 : 5) || window.presents != 5 || hos_present_count != 5) return 3;
     printf("STATE %lld %lld %lld %d %d %d\n", (long long)presents, (long long)shown_count,
            (long long)next_frame_at, scans, steps, sleeps);

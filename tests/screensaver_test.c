@@ -120,6 +120,12 @@ static void menu_mouse(HWND w, int open, int opened_by_escape) { (void)w; (void)
 /* (the game's own menus take the mouse while one of them is shown (host/oot_menu.c); never here either) */
 typedef int64_t LONG64;
 typedef struct { LONG x, y; } POINT;
+enum { WM_CHAR = 0x102 };
+static int coop_mouse(HWND w, POINT p, int event) { (void)w; (void)p; (void)event; return 0; }
+int hos_coop_char(unsigned ch) { (void)ch; return 0; }
+int hos_coop_key(unsigned key, int repeat) { (void)key; (void)repeat; return 0; }
+int hos_coop_keys_taken(void) { return 0; }
+static BOOL ScreenToClient(HWND w, POINT *p) { (void)w; (void)p; unexpected(); return FALSE; }
 static int game_menu_open;
 static volatile LONG64 game_menu_seen_ns;
 static volatile LONG play_wheel;

@@ -1,0 +1,9 @@
+[submodule "integrations/oot-coop"]
+	path = integrations/oot-coop
+	url = https://github.com/daurosk/oot-remake-multiplayer.git
+[submodule "integrations/randomizer"]
+	path = integrations/randomizer
+	url = https://github.com/KAMOX06/hookshot-randomized.git
+[submodule "integrations/tracker"]
+	path = integrations/tracker
+	url = https://github.com/LucieTheFool/boomerang-tracker.git

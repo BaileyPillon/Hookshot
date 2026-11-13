@@ -36,6 +36,7 @@
 #include "oot_cheat_items.h"
 #include "vk_progress.h"   // (StartupView, version_text: the start-up screen)
 #include "vk_ui.h"
+#include "vk_coop.h"   // (oot-remake-multiplayer: co-op's drawing over the picture)
 #include "vk_menu_keys.h"   // (which gamepad buttons confirm and go back: those A and B are bound to)         // (how it looks: Dear ImGui, vk_imgui.h)
 #include "vk_dlss.h"
 #include "vk_framegen.h"   // (Frame generation by: who makes the frames now, framegen_maker)
@@ -124,6 +125,12 @@ const char* tx_onoff(int v) { return v ? "On" : "Off"; }
 const char* tx_fps_level(int v) { return fps_stats::level_name(v); }
 const char* tx_fps_corner(int v) { return fps_stats::corner_name(v); }   // (the FPS counter row: Off, FPS, Frame time, Graph, Breakdown)
 const char* tx_profile(int v) { return v ? "Handheld" : "Docked"; }   // (opts.handheld: the Profile row)
+const char* tx_save_profile(int v) {
+    static char text[32];
+    if (v == 1) return "1 (original saves)";
+    snprintf(text, sizeof text, "Profile %d", v);
+    return text;
+}
 const char* tx_menu_shortcut(int v) {
     // (F1 is never turned off: the menu is always one key away. Esc as well, as a PC game's pause menu)
     static const char* const names[] = {"Insert or F1", "F1 only", "Insert, F1 or Esc"};
@@ -1205,6 +1212,8 @@ Row rows[] = {
      "Frames per second in the top right corner, and as much more as you choose.", hn_fps, false, true},
     {TAB_GAMEPLAY, "FPS counter position", &opts.fps_corner, 0, 3, 1, tx_fps_corner,
      "The corner the FPS counter shows in. While this menu is open it shows at the top right.", nullptr, false, true},
+    {TAB_GAMEPLAY, "FPS counter size", &opts.fps_scale, 50, 150, 10, tx_percent,
+     "Scales the counter and its graph independently of the menu. 50% is the smallest.", nullptr, false, true},
     {TAB_GAMEPLAY, "Menu size", &opts.menu_size, 1, 3, 1, tx_menu_size,
      "How large this menu, the FPS counter and the start-up screen are drawn.", hn_menu_size, false, true},
     {TAB_GAMEPLAY, "Game speed", &opts.realtime, 0, 1, 1, tx_speed, "How the game keeps time when it runs below 60 fps.",
@@ -1229,6 +1238,9 @@ Row rows[] = {
     {TAB_GAMEPLAY, "Skip opening", &opts.skip_opening, 0, 1, 1, tx_onoff,
      "Skips the new-game opening (the story movie and Navi waking Link) and leaves later cutscenes, the Deku Tree "
      "meeting, and the title screen alone.", nullptr, false, true},
+    {TAB_GAMEPLAY, "Save profile", &opts.save_profile, 1, 9, 1, tx_save_profile,
+     "Separate playthroughs. Profile 1 keeps your original saves. Save your progress before restarting to switch. "
+     "An explicit --user launch keeps its chosen folder.", nullptr, true, true},
 
     // Controls (12 rows; Motion opens the 6 TAB_MOTION rows, Controls its page with the 2 TAB_PAGE rows)
     {TAB_CONTROLS, "Controller in background", &opts.pad_background, 0, 1, 1, tx_onoff,
@@ -3683,7 +3695,8 @@ struct Tab {
 void draw_fps(ui::Ctx& c, bool under_banner) {
     namespace fs = fps_stats;
     int level = fs::level_of(opts.show_fps);
-    const float s = c.s, big = 28 * s, small = 13 * s, label = 12 * s;
+    const float s = c.s * std::clamp(opts.fps_scale, 50, 150) / 100.0f;
+    const float big = 28 * s, small = 13 * s, label = 12 * s;
     const ImU32 green = ui::rgba(72, 255, 110), ink = ui::kInkBright, dim = ui::kSoft, soft = ui::kInk;
     const Tab num(c.f.strong, big), tab(c.f.strong, small), lab(c.f.strong, label);
     const float nw = num.width(fps_text), lw = ui::size_of(c.f.strong, small, "FPS").x;
@@ -4962,7 +4975,8 @@ void menu_record(VkCommandBuffer cmd, uint32_t index, uint32_t w, uint32_t h) {
     const bool start = startup_on.load(std::memory_order_acquire);
     const bool fps = opts.show_fps && !start;   // (no game frames yet: not "0 FPS" over the start-up screen)
     const bool open = open_now.load(std::memory_order_relaxed);
-    if (!start && !fps && !open) {   // (nothing shows: no ImGui frame, no render pass)
+    const bool coop = !start && coop::wanted();   // (co-op's chat lines and name tags: vk_coop.cpp)
+    if (!start && !fps && !open && !coop) {   // (nothing shows: no ImGui frame, no render pass)
         // (but a new window size or Menu size since the last bake: one frame with nothing drawn that bakes the menu's glyphs
         // and measures its page for the new size, so the next open has no hitch whatever was resized while nothing showed)
         if (prebake_needed(w, h) && ui::begin(w, h)) {
@@ -4985,6 +4999,7 @@ void menu_record(VkCommandBuffer cmd, uint32_t index, uint32_t w, uint32_t h) {
     ui::Ctx c = ui_ctx(w, h);
     prebake(c);   // (the menu's glyphs at this size, before it opens: no hitch then)
     if (start) draw_startup(c);   // (under the menu)
+    if (coop) coop::draw(w, h);   // (under the menu too)
     if (open) draw_menu(c);
     if (fps) draw_fps(c, open);
     ::mkwvk::rec::boundary(::mkwvk::rec::B_DIRECT);   // (Dear ImGui records into cmd directly, its backend through its own pointers: what this thread recorded through vk_work.h reaches cmd first)
@@ -4994,9 +5009,11 @@ void menu_record(VkCommandBuffer cmd, uint32_t index, uint32_t w, uint32_t h) {
 void menu_record_image(VkCommandBuffer cmd, VkImage image, VkImageView view, uint32_t w, uint32_t h) {
     const bool open = open_now.load(std::memory_order_relaxed);
     const bool fps = opts.show_fps && !startup_on.load(std::memory_order_acquire);
-    if (!open && !fps) return;
+    const bool coop = !startup_on.load(std::memory_order_acquire) && coop::wanted();
+    if (!open && !fps && !coop) return;
     if (!ui::begin(w, h)) return;
     ui::Ctx c = ui_ctx(w, h);
+    if (coop) coop::draw(w, h);
     if (open) draw_menu(c);
     if (fps) draw_fps(c, open);
     ::mkwvk::rec::boundary(::mkwvk::rec::B_DIRECT);   // (Dear ImGui records into cmd directly, its backend through its own pointers: what this thread recorded through vk_work.h reaches cmd first)

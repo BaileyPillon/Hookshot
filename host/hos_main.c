@@ -14,6 +14,7 @@
 #endif
 #include "hos_paths.h"
 #include "devtools.h"
+#include "save_profile.h"
 #include "hos_wide_size.h"   /* (the widescreen picture's size, shared with the Insert menu) */
 #include "../gpu/vk/vk_api.h"
 #include "../gpu/vk/oot_cheat_items.h"
@@ -1819,9 +1820,13 @@ static int game_main(int argc, char **argv) {
     void hos_control_start(const char *version);
     hos_control_start(HOOKSHOT_VERSION);   /* (HOS_CONTROL=<socket>: the control bridge, host/control.c) */
     const char *image = NULL;
+    int user_override = 0;
     for (int i = 1; i < argc; i++) {
         if (!strcmp(argv[i], "--romfs") && i + 1 < argc) hos_romfs_dir = argv[++i];
-        else if (!strcmp(argv[i], "--user") && i + 1 < argc) hos_user_dir = argv[++i];
+        else if (!strcmp(argv[i], "--user") && i + 1 < argc) {
+            hos_user_dir = argv[++i];
+            user_override = 1;
+        }
         else if (!strcmp(argv[i], "--trace")) hos_trace = 1;
         else if (!strcmp(argv[i], "--prepare-shaders")) {   /* (hookshot) a build's last step: no game */
 #ifdef _WIN32
@@ -1877,8 +1882,17 @@ static int game_main(int argc, char **argv) {
         return 2;
     }
     if (env_on("HOS_TRACE")) hos_trace = 1;
+    /* An explicit --user (checkpoint resume, test runs, co-op) always owns its save path. */
     if (!hos_user_dir) hos_user_dir = "user";
     CreateDirectoryA(hos_user_dir, NULL);
+    static char profile_user[MAX_PATH * 3];
+    if (!user_override) {
+        if (!hos_save_profile_select(hos_user_dir, profile_user, sizeof profile_user)) {
+            fprintf(stderr, "Cannot open the selected Longshot save profile. Check its folder and save_profile setting.\n");
+            return 2;
+        }
+        hos_user_dir = profile_user;
+    }
     if (!reserve_guest()) {
         fprintf(stderr, "cannot reserve the guest window\n");
         return 1;

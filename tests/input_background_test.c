@@ -108,6 +108,9 @@ void rx_set_screenshot_ms(int64_t ms) { (void)ms; commands++; }
 void rx_request_rdoc_capture(int frames) { (void)frames; commands++; }
 void rx_flash_dark_arm(void) { commands++; }
 
+static int coop_chat_active;
+int hos_coop_keys_taken(void) { return coop_chat_active; }
+volatile uint64_t hos_coop_pad;
 #include "input_actual.inc"
 
 static void packet(uint64_t buttons, int32_t lx, int32_t ly, int32_t rx) {

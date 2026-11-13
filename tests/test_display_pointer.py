@@ -47,7 +47,7 @@ def main():
     template = template.replace("/* ACTUAL_MOVE */", "LRESULT move_event(HWND w, UINT msg, LPARAM lp = 0) { switch(msg) {" + win[start:end] + "} return 0; }")
     start = win.index("    case WM_MOUSEWHEEL:")
     end = win.index("    case WM_RBUTTONDOWN:", start)
-    template = template.replace("/* ACTUAL_WHEEL */", "LRESULT wheel_event(HWND w, WPARAM wp) { switch((int)WM_MOUSEWHEEL) {" + win[start:end] + "} return 0; }")
+    template = template.replace("/* ACTUAL_WHEEL */", "LRESULT wheel_event(HWND w, WPARAM wp, [[maybe_unused]] LPARAM lp = 0) { switch((int)WM_MOUSEWHEEL) {" + win[start:end] + "} return 0; }")
     start = sdl.index("                case HOS_SDL_EV_MOUSE_DOWN:")
     end = sdl.index("                case HOS_SDL_EV_MOUSE_UP:", start)
     template = template.replace("/* ACTUAL_DOWN */", "void down(float x, float y) { HosSdlEvent e{};e.x=x;e.y=y;e.button=1; switch((int)HOS_SDL_EV_MOUSE_DOWN) {" + sdl[start:end] + "} pointer_update(0,0); }")

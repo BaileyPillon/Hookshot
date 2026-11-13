@@ -60,16 +60,22 @@ bool prebake_needed(uint32_t, uint32_t) { return resized; }
 void draw_startup(ui::Ctx&) { calls += "s"; }
 void draw_menu(ui::Ctx&) { calls += "m"; }
 void draw_fps(ui::Ctx&, bool under_banner) { calls += under_banner ? "F" : "f"; }
+namespace coop {
+bool visible = false;
+bool wanted() { return visible; }
+void draw(uint32_t w, uint32_t h) { CHECK(w == 640 && h == 360); calls += "c"; }
+}
 ''' + fn + r'''
 int main() {
-    for (bool startup : {false, true}) for (bool fps : {false, true}) for (bool menu : {false, true}) for (bool can : {true, false}) {
+    for (bool multiplayer : {false, true}) for (bool startup : {false, true}) for (bool fps : {false, true}) for (bool menu : {false, true}) for (bool can : {true, false}) {
+        coop::visible = multiplayer;
         opts.show_fps = fps;
         open_now = menu;
         startup_on = startup;
         can_draw = can;
         calls.clear();
         menu_record(1, 2, 640, 360);
-        if (!startup && !fps && !menu) {   // (nothing shows: no ImGui frame at all, only the reaping; after a resize, one bake)
+        if (!startup && !fps && !menu && !multiplayer) {   // (nothing shows: no ImGui frame at all, only the reaping; after a resize, one bake)
             CHECK(calls == "i");
             calls.clear(), resized = true;
             menu_record(1, 2, 640, 360);
@@ -80,6 +86,7 @@ int main() {
         if (!can) { CHECK(calls == "b"); continue; }                           // (no ImGui here: nothing recorded)
         std::string want = "bp";
         if (startup) want += "s";
+        if (multiplayer && !startup) want += "c";
         if (menu) want += "m";
         if (fps && !startup) want += menu ? "F" : "f";
         want += "dr";   // (the recorder boundary right before the recording)

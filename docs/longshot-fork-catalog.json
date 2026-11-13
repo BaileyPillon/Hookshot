@@ -1,0 +1,442 @@
+[
+  {
+    "repository": "BaileyPillon/Longshot",
+    "url": "https://github.com/BaileyPillon/Longshot",
+    "reviewed_commit": "d481e1336dfb2de7cc8c255e042c7843aa0f7070",
+    "retrieved_utc": "2026-11-13T15:26:32.389295+00:00",
+    "stars_at_review": 0,
+    "reported_license": "GPL-3.0",
+    "access_error": null,
+    "decision": "Our fork; retained its checkpoint/devtools work and advanced the upstream base."
+  },
+  {
+    "repository": "NotRexed/Hookshot",
+    "url": "https://github.com/NotRexed/Hookshot",
+    "reviewed_commit": "",
+    "retrieved_utc": "2026-11-13T15:26:32.060503+00:00",
+    "stars_at_review": null,
+    "reported_license": "Unverified",
+    "access_error": "gh: Not Found (HTTP 404)",
+    "decision": "Original URL returned 404; recovered the exact v2.2.0-rc.1 revision through the surviving GitHub fork network."
+  },
+  {
+    "repository": "Shakoquo/Mako",
+    "url": "https://github.com/Shakoquo/Mako",
+    "reviewed_commit": "348436cce81b3d095ab2a312a0d8e63c267778b4",
+    "retrieved_utc": "2026-11-13T15:26:32.235498+00:00",
+    "stars_at_review": 27,
+    "reported_license": "GPL-3.0",
+    "access_error": null,
+    "decision": "AMD/foliage fixes, hardware-aware setup, Master Quest child-dungeon preview. Use common upstream fixes; do not merge the fork wholesale or its restricted controller art."
+  },
+  {
+    "repository": "madebyjordan/Longshot",
+    "url": "https://github.com/madebyjordan/Longshot",
+    "reviewed_commit": "01d3ee79e732a9978ae5a55f2953e171c1bd32bd",
+    "retrieved_utc": "2026-11-13T15:26:32.389152+00:00",
+    "stars_at_review": 2,
+    "reported_license": "GPL-3.0",
+    "access_error": null,
+    "decision": "Unrelated fork sharing our name; older AMD-oriented changes. Do not confuse its releases with this project."
+  },
+  {
+    "repository": "Sacrappy/HeyListen",
+    "url": "https://github.com/Sacrappy/HeyListen",
+    "reviewed_commit": "be8bd70948b16e438a403a8a945edbce63080278",
+    "retrieved_utc": "2026-11-13T15:26:32.788082+00:00",
+    "stars_at_review": 6,
+    "reported_license": "GPL-3.0",
+    "access_error": null,
+    "decision": "Large host/job/render redesign. Not a small compatible feature patch; requires separate architecture and cross-GPU evaluation."
+  },
+  {
+    "repository": "RufflezAU/Hookshot",
+    "url": "https://github.com/RufflezAU/Hookshot",
+    "reviewed_commit": "216f7ebd5094891376a3c583a86e80560d33ed53",
+    "retrieved_utc": "2026-11-13T15:26:36.973847+00:00",
+    "stars_at_review": 8,
+    "reported_license": "GPL-3.0",
+    "access_error": null,
+    "decision": "Deck/Linux performance work. Catalogue for that hardware; no global Windows desktop defaults imported."
+  },
+  {
+    "repository": "mihawk-99/PS5_Hookshot",
+    "url": "https://github.com/mihawk-99/PS5_Hookshot",
+    "reviewed_commit": "",
+    "retrieved_utc": "2026-11-13T15:26:37.148037+00:00",
+    "stars_at_review": null,
+    "reported_license": "Unverified",
+    "access_error": "gh: Not Found (HTTP 404)",
+    "decision": "URL returned 404; no source implementation verified or imported."
+  },
+  {
+    "repository": "TomShafford/Hookshot",
+    "url": "https://github.com/TomShafford/Hookshot",
+    "reviewed_commit": "7cb3bfceb81f96583521e859bd09280391b6a11d",
+    "retrieved_utc": "2026-11-13T15:26:37.698809+00:00",
+    "stars_at_review": 8,
+    "reported_license": "GPL-3.0",
+    "access_error": null,
+    "decision": "OoT fix branch; overlap with newer shared upstream. No duplicate cherry-picks or unmeasured defaults."
+  },
+  {
+    "repository": "evilmfkr/Evil_Hookshot",
+    "url": "https://github.com/evilmfkr/Evil_Hookshot",
+    "reviewed_commit": "82959d30fd9812005759ef30dfd2d9d7404c82c3",
+    "retrieved_utc": "2026-11-13T15:26:37.661493+00:00",
+    "stars_at_review": 8,
+    "reported_license": "GPL-3.0",
+    "access_error": null,
+    "decision": "Renderer/build compatibility work; shared upstream includes EvilOOT-derived build support."
+  },
+  {
+    "repository": "mooki000/hookshot-workbench",
+    "url": "https://github.com/mooki000/hookshot-workbench",
+    "reviewed_commit": "58ccb6e5715209aea639d721b62ab47ca4df950e",
+    "retrieved_utc": "2026-11-13T15:26:37.753543+00:00",
+    "stars_at_review": 1,
+    "reported_license": "MIT",
+    "access_error": null,
+    "decision": "Developer tooling concept; use the newer native control/bug-report bridge already in the upstream merge."
+  },
+  {
+    "repository": "LucieTheFool/boomerang-tracker",
+    "url": "https://github.com/LucieTheFool/boomerang-tracker",
+    "reviewed_commit": "0fb33437e620adb3d3634f28ed7650c20bb2361c",
+    "retrieved_utc": "2026-11-13T15:26:40.471742+00:00",
+    "stars_at_review": 0,
+    "reported_license": "MIT",
+    "access_error": null,
+    "decision": "Integrated as a pinned companion: read-only completion tracking, reachable-item suggestions, overlay and hotkeys; build/test fixes recorded."
+  },
+  {
+    "repository": "Mozencaz/OotrR",
+    "url": "https://github.com/Mozencaz/OotrR",
+    "reviewed_commit": "ddf9a98d986fbdff36305b5b1f03c5a26207b46d",
+    "retrieved_utc": "2026-11-13T15:26:41.061527+00:00",
+    "stars_at_review": 4,
+    "reported_license": "Unverified",
+    "access_error": null,
+    "decision": "Randomizer candidate with no verified license grant; no source copied."
+  },
+  {
+    "repository": "Smeef123/OoTRemakeRando",
+    "url": "https://github.com/Smeef123/OoTRemakeRando",
+    "reviewed_commit": "b6b85b4303f29e562b0bb4fc09752f01792e845e",
+    "retrieved_utc": "2026-11-13T15:26:41.191354+00:00",
+    "stars_at_review": 3,
+    "reported_license": "NOASSERTION",
+    "access_error": null,
+    "decision": "Randomizer candidate, unclear license metadata; chose the explicitly MIT Hookshot-specific implementation instead."
+  },
+  {
+    "repository": "KAMOX06/hookshot-randomized",
+    "url": "https://github.com/KAMOX06/hookshot-randomized",
+    "reviewed_commit": "91f301987e8f67b5239bb22429137077a1e330d0",
+    "retrieved_utc": "2026-11-13T15:26:41.414189+00:00",
+    "stars_at_review": 2,
+    "reported_license": "MIT",
+    "access_error": null,
+    "decision": "Integrated as pinned companion: chest/shop shuffle, skips, world-opening options, spoiler log and seed-specific saves. No progression solver."
+  },
+  {
+    "repository": "daurosk/oot-remake-multiplayer",
+    "url": "https://github.com/daurosk/oot-remake-multiplayer",
+    "reviewed_commit": "f5e4ca3b407197349af3045abff4bb7475ac2fd8",
+    "retrieved_utc": "2026-11-13T15:26:43.539861+00:00",
+    "stars_at_review": 93,
+    "reported_license": "GPL-3.0",
+    "access_error": null,
+    "decision": "Integrated exact-base GPL bridge and pinned module; opt-in co-op, remote puppets, sync and chat. Automated tests, not two-player gameplay, verified here."
+  },
+  {
+    "repository": "ZuanCrisp/Fritchii",
+    "url": "https://github.com/ZuanCrisp/Fritchii",
+    "reviewed_commit": "7aeddb77aa41cbb32888c8b726d20fd0e16ff192",
+    "retrieved_utc": "2026-11-13T15:26:44.334788+00:00",
+    "stars_at_review": 7,
+    "reported_license": "GPL-3.0",
+    "access_error": null,
+    "decision": "Surviving mirror/release history; default nx2 is emulator code. Fritchii pipeline preparation is incorporated through the matching Hookshot upstream change."
+  },
+  {
+    "repository": "Benjaminvdw/Fritchii",
+    "url": "https://github.com/Benjaminvdw/Fritchii",
+    "reviewed_commit": "ef3679e93fac5954ac6ea4476e495b65c2e36d2a",
+    "retrieved_utc": "2026-11-13T15:26:44.468435+00:00",
+    "stars_at_review": 16,
+    "reported_license": "GPL-3.0",
+    "access_error": null,
+    "decision": "Linux AppImage packaging candidate; newer Hookshot already has its own Linux packaging, not merged wholesale."
+  },
+  {
+    "repository": "giangero1/Fritchii-ZeroStutter",
+    "url": "https://github.com/giangero1/Fritchii-ZeroStutter",
+    "reviewed_commit": "85c513f2e609a7a4c7faff9ee93732cf9ee4b659",
+    "retrieved_utc": "2026-11-13T15:26:44.570026+00:00",
+    "stars_at_review": 2,
+    "reported_license": "GPL-3.0",
+    "access_error": null,
+    "decision": "Shader/preparation claims; use compatible Hookshot pipeline-state recipes and local compilation, not shared game-derived shader blobs."
+  },
+  {
+    "repository": "byronlai99/Fritchii-HDrum",
+    "url": "https://github.com/byronlai99/Fritchii-HDrum",
+    "reviewed_commit": "d4fa6f74a20fc1e4737cb708ff950ca58e0504fe",
+    "retrieved_utc": "2026-11-13T15:26:46.753828+00:00",
+    "stars_at_review": 1,
+    "reported_license": "GPL-3.0",
+    "access_error": null,
+    "decision": "Fritchii language/distribution variation; source-localized Hookshot menus already incorporated."
+  },
+  {
+    "repository": "juvxncio/zelda-oot-perfis",
+    "url": "https://github.com/juvxncio/zelda-oot-perfis",
+    "reviewed_commit": "0e59f3c0e258cc50495d6796a6efae1f6846df53",
+    "retrieved_utc": "2026-11-13T15:26:47.812587+00:00",
+    "stars_at_review": 1,
+    "reported_license": "GPL-3.0",
+    "access_error": null,
+    "decision": "Nine-profile workflow adapted independently in the native host. Its emulator ExeFS module is not copied into the recompilation."
+  },
+  {
+    "repository": "zortos293/Lichii",
+    "url": "https://github.com/zortos293/Lichii",
+    "reviewed_commit": "87d84d513c67275ad0d6ae50ba51cce76e7e3ded",
+    "retrieved_utc": "2026-11-13T15:26:47.831742+00:00",
+    "stars_at_review": 8904,
+    "reported_license": "GPL-3.0",
+    "access_error": null,
+    "decision": "Popular emulator foundation. Useful compatibility reference, not a native Hookshot subsystem to merge."
+  },
+  {
+    "repository": "Manaclenodisconnect/Lichii-Enhanced",
+    "url": "https://github.com/Manaclenodisconnect/Lichii-Enhanced",
+    "reviewed_commit": "bfe1a537fd9dac106d799917e8598b70353bce25",
+    "retrieved_utc": "2026-11-13T15:26:48.177117+00:00",
+    "stars_at_review": 277,
+    "reported_license": "MIT",
+    "access_error": null,
+    "decision": "Only README and LICENSE in the reviewed tree. Advertised manager/wizard/online functions are not an implementation; mod-management idea independently implemented."
+  },
+  {
+    "repository": "Shakoquo/Lichii-sharkiix-version",
+    "url": "https://github.com/Shakoquo/Lichii-sharkiix-version",
+    "reviewed_commit": "4243c082f59330b31686cb0e8b35ed82756f7ee0",
+    "retrieved_utc": "2026-11-13T15:26:50.338940+00:00",
+    "stars_at_review": 88,
+    "reported_license": "GPL-3.0",
+    "access_error": null,
+    "decision": "AMD-oriented emulator fork and lineage of Mako; avoid emulator GPU implementation in the native renderer."
+  },
+  {
+    "repository": "CheezerWheezer/Lichii",
+    "url": "https://github.com/CheezerWheezer/Lichii",
+    "reviewed_commit": "a8e84764e45e6b6a6615f7f26cc525e74f69a7a1",
+    "retrieved_utc": "2026-11-13T15:26:51.083541+00:00",
+    "stars_at_review": 56,
+    "reported_license": "GPL-3.0",
+    "access_error": null,
+    "decision": "AMD-superior branch; hardware-specific emulator tuning, not a general Longshot default."
+  },
+  {
+    "repository": "K-code-AI/Greenhat-Lichii",
+    "url": "https://github.com/K-code-AI/Greenhat-Lichii",
+    "reviewed_commit": "4307d3246b239e5bfe4e4989f3eeaadb139f59c7",
+    "retrieved_utc": "2026-11-13T15:26:51.381965+00:00",
+    "stars_at_review": 52,
+    "reported_license": "GPL-3.0",
+    "access_error": null,
+    "decision": "Emulator fork/customizations; use the native Longshot manager and upstream diagnostics instead of merging another emulator."
+  },
+  {
+    "repository": "Syyrhc/Lichii-Ally",
+    "url": "https://github.com/Syyrhc/Lichii-Ally",
+    "reviewed_commit": "6d20d651a2165b3c6408c7a6b2223c3464f79dcf",
+    "retrieved_utc": "2026-11-13T15:26:51.308865+00:00",
+    "stars_at_review": 30,
+    "reported_license": "GPL-3.0",
+    "access_error": null,
+    "decision": "ROG Ally/handheld focus. No desktop-wide power, resolution or memory presets imported."
+  },
+  {
+    "repository": "oceanpacificpeace/lichii-shader-sync",
+    "url": "https://github.com/oceanpacificpeace/lichii-shader-sync",
+    "reviewed_commit": "9a8bf8cf707b49f5f10ee283a62cfdb5103ccb78",
+    "retrieved_utc": "2026-11-13T15:26:53.827449+00:00",
+    "stars_at_review": 336,
+    "reported_license": "MIT",
+    "access_error": null,
+    "decision": "Shader-sync utility. Do not import/download community game-derived cache payloads; use locally rebuilt pipeline recipes."
+  },
+  {
+    "repository": "mja00/Lichii",
+    "url": "https://github.com/mja00/Lichii",
+    "reviewed_commit": "043d5296390efadb865c4a57066ba9d4c59f9840",
+    "retrieved_utc": "2026-11-13T15:26:54.511072+00:00",
+    "stars_at_review": 21,
+    "reported_license": "GPL-3.0",
+    "access_error": null,
+    "decision": "OoT emulator compatibility branch; source/commit comparison reference, no emulator core transplant."
+  },
+  {
+    "repository": "tangerineturtle1/NX2navi",
+    "url": "https://github.com/tangerineturtle1/NX2navi",
+    "reviewed_commit": "5190f8e932b92cf694d9f8b5a7ef6e52c141de2a",
+    "retrieved_utc": "2026-11-13T15:26:55.224299+00:00",
+    "stars_at_review": 3755,
+    "reported_license": "Mixed: additions reserved",
+    "access_error": null,
+    "decision": "Research-only: LICENSE-ADDITIONS reserves new code despite MIT metadata. Independent/upstream analogues cover graphics/UI features; no reserved additions copied."
+  },
+  {
+    "repository": "loteran/NX2navi",
+    "url": "https://github.com/loteran/NX2navi",
+    "reviewed_commit": "1ab1e001985a333ab7e31217ba8810a3c521d3af",
+    "retrieved_utc": "2026-11-13T15:26:55.389973+00:00",
+    "stars_at_review": 12,
+    "reported_license": "MIT",
+    "access_error": null,
+    "decision": "Linux packaging fork; inherits the NX2navi licensing boundary. Not imported."
+  },
+  {
+    "repository": "ZuanCrisp/NX2Navi-Zelda-OOT-Port",
+    "url": "https://github.com/ZuanCrisp/NX2Navi-Zelda-OOT-Port",
+    "reviewed_commit": "53523106136dd7eaa94f5e2e0f8965c064eca2d1",
+    "retrieved_utc": "2026-11-13T15:26:57.276847+00:00",
+    "stars_at_review": 9,
+    "reported_license": "MIT",
+    "access_error": null,
+    "decision": "NX2navi derivative; not treated as a separate native recompilation or a license workaround."
+  },
+  {
+    "repository": "prop11/Epona",
+    "url": "https://github.com/prop11/Epona",
+    "reviewed_commit": "f5da269add5c8040d4f6c6aeb7f811cd08125f3c",
+    "retrieved_utc": "2026-11-13T15:26:58.117449+00:00",
+    "stars_at_review": 0,
+    "reported_license": "MIT",
+    "access_error": null,
+    "decision": "NX2navi derivative; no reserved additions imported."
+  },
+  {
+    "repository": "suvrathkesaraju-lgtm/Penguin-NX2navi",
+    "url": "https://github.com/suvrathkesaraju-lgtm/Penguin-NX2navi",
+    "reviewed_commit": "262c13979e15044effd2c5b27576e82678114d5c",
+    "retrieved_utc": "2026-11-13T15:26:58.884036+00:00",
+    "stars_at_review": 2,
+    "reported_license": "MIT",
+    "access_error": null,
+    "decision": "NX2navi Linux derivative; no reserved additions imported."
+  },
+  {
+    "repository": "sostenesfreitas/ocarina-recomp",
+    "url": "https://github.com/sostenesfreitas/ocarina-recomp",
+    "reviewed_commit": "406b3ae0321eff8dd083a607a8186aa56b52b873",
+    "retrieved_utc": "2026-11-13T15:27:00.619269+00:00",
+    "stars_at_review": 1175,
+    "reported_license": "GPL-3.0",
+    "access_error": null,
+    "decision": "Separate N64 Ocarina recompilation, not the Switch 2 remake. Its gameplay/renderer mods are not drop-in compatible."
+  },
+  {
+    "repository": "pavelgajdo/Hokkaido",
+    "url": "https://github.com/pavelgajdo/Hokkaido",
+    "reviewed_commit": "32c4089558e25395aa026c594f2b70e5773360b1",
+    "retrieved_utc": "2026-11-13T15:31:46.024482+00:00",
+    "stars_at_review": 242,
+    "reported_license": "GPL-3.0",
+    "access_error": null,
+    "decision": "Android-focused emulator fork. Platform port is outside this Windows native integration."
+  },
+  {
+    "repository": "xTopher1049/Tuxchii",
+    "url": "https://github.com/xTopher1049/Tuxchii",
+    "reviewed_commit": "e3d621cc75e9101ea16f74216caa4296efc5f99d",
+    "retrieved_utc": "2026-11-13T15:31:46.012733+00:00",
+    "stars_at_review": 78,
+    "reported_license": "GPL-3.0",
+    "access_error": null,
+    "decision": "Linux-oriented emulator fork. Keep Hookshot's native Linux implementation instead."
+  },
+  {
+    "repository": "conongnang/Lichii",
+    "url": "https://github.com/conongnang/Lichii",
+    "reviewed_commit": "79f33200cf6c7c5aa506170a4fb17662bcdf8318",
+    "retrieved_utc": "2026-11-13T15:31:46.001951+00:00",
+    "stars_at_review": 13,
+    "reported_license": "GPL-3.0",
+    "access_error": null,
+    "decision": "OoT/AMD performance branch; no unsupported assumptions about NVIDIA or native-host parity."
+  },
+  {
+    "repository": "skolvolt/Lichii",
+    "url": "https://github.com/skolvolt/Lichii",
+    "reviewed_commit": "c0b50af5cc72049bca74a09f08868e2ce3d1f810",
+    "retrieved_utc": "2026-11-13T15:31:46.001791+00:00",
+    "stars_at_review": 5,
+    "reported_license": "GPL-3.0",
+    "access_error": null,
+    "decision": "Skitchii/OoT emulator branch; catalogue candidate, not transplanted."
+  },
+  {
+    "repository": "lethevimlet/lichii-bc250",
+    "url": "https://github.com/lethevimlet/lichii-bc250",
+    "reviewed_commit": "811a3d22d3f12ff880fc6bbc39a45d871ade5596",
+    "retrieved_utc": "2026-11-13T15:31:49.335563+00:00",
+    "stars_at_review": 17,
+    "reported_license": "GPL-3.0",
+    "access_error": null,
+    "decision": "BC-250-specific tuning; does not apply to the target NVIDIA desktop."
+  },
+  {
+    "repository": "Unfixedeward/Lichii",
+    "url": "https://github.com/Unfixedeward/Lichii",
+    "reviewed_commit": "b3a82f93f373099cae4e51d4dfce5cb72ac9f26a",
+    "retrieved_utc": "2026-11-13T15:31:49.628565+00:00",
+    "stars_at_review": 2,
+    "reported_license": "GPL-3.0",
+    "access_error": null,
+    "decision": "Intel Arc-specific emulator work; separate hardware validation required."
+  },
+  {
+    "repository": "nauxph/Lichii-AMD",
+    "url": "https://github.com/nauxph/Lichii-AMD",
+    "reviewed_commit": "1779779ccdbe20d0afbde2e5fb733e195593a647",
+    "retrieved_utc": "2026-11-13T15:31:49.610940+00:00",
+    "stars_at_review": 2,
+    "reported_license": "GPL-3.0",
+    "access_error": null,
+    "decision": "AMD emulator work; separate implementation/measurement required in native Hookshot."
+  },
+  {
+    "repository": "kanade333/Zakantine",
+    "url": "https://github.com/kanade333/Zakantine",
+    "reviewed_commit": "a612e1dbe3f06d6c07cffebdc47e1307f257acf6",
+    "retrieved_utc": "2026-11-13T15:31:49.852783+00:00",
+    "stars_at_review": 3,
+    "reported_license": "GPL-3.0",
+    "access_error": null,
+    "decision": "Lichii/nx2 derivative; no distinct tested native integration selected."
+  },
+  {
+    "repository": "JimerSamuel/Fritchii",
+    "url": "https://github.com/JimerSamuel/Fritchii",
+    "reviewed_commit": "9a2124404816de459aa305de1732794cd1520853",
+    "retrieved_utc": "2026-11-13T15:31:53.002911+00:00",
+    "stars_at_review": 1,
+    "reported_license": "GPL-3.0",
+    "access_error": null,
+    "decision": "Arc B580-focused Fritchii branch; not a general desktop preset."
+  },
+  {
+    "repository": "Frizti/Fritchii",
+    "url": "https://github.com/Frizti/Fritchii",
+    "reviewed_commit": "",
+    "retrieved_utc": "2026-11-13T15:31:53.136718+00:00",
+    "stars_at_review": null,
+    "reported_license": "Unverified",
+    "access_error": "gh: Not Found (HTTP 404)",
+    "decision": "Original URL returned 404. Surviving mirrors and shared Hookshot pipeline-source provenance used instead."
+  }
+]

@@ -11,6 +11,7 @@ python -I -B tests/test_gpu_hang_watch.py [--cxx g++]
 """
 import argparse
 import os
+import re
 from pathlib import Path
 import subprocess
 import tempfile
@@ -70,13 +71,17 @@ typedef int HANDLE;
 static HANDLE GetCurrentThread() { return 0; }
 static void SetThreadDescription(HANDLE, const wchar_t*) {}
 [[noreturn]] void device_lost(const char* why = nullptr) {
+    extern std::chrono::steady_clock::time_point watch_started;
+    std::printf("watch_elapsed=%.3f\n", std::chrono::duration<double>(std::chrono::steady_clock::now() - watch_started).count());
     std::printf("device_lost: %s\n", why ? why : "(VK_ERROR_DEVICE_LOST)");
     std::fflush(stdout);
     std::_Exit(3);
 }
 @@WATCH@@
+std::chrono::steady_clock::time_point watch_started;
 int main(int argc, char** argv) {
     mode = argc > 1 ? argv[1] : "";
+    watch_started = std::chrono::steady_clock::now();
     gpu_hang_watch_start();
     gpu_hang_watch_start();   // (once only)
     std::this_thread::sleep_for(std::chrono::milliseconds(3500));
@@ -90,7 +95,9 @@ def run(exe, mode, limit):
     env = dict(os.environ, RX_VK_GPU_HANG_SEC=str(limit))
     t0 = time.monotonic()
     r = subprocess.run([str(exe), mode], capture_output=True, text=True, timeout=30, env=env)
-    return r.returncode, r.stdout, time.monotonic() - t0
+    # Measure the watcher, not Windows DLL loading / antivirus process-start delay.
+    measured = re.search(r"watch_elapsed=([0-9.]+)", r.stdout)
+    return r.returncode, r.stdout, float(measured[1]) if measured else time.monotonic() - t0
 
 
 def main():

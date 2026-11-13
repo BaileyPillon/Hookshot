@@ -29,6 +29,7 @@ using std::isfinite;
 [[maybe_unused]] static void ui_only() { CHECK(std::this_thread::get_id() == ui_thread); }
 
 namespace win {
+static int coop_mouse(HWND, POINT, int) { return 0; } // Co-op off; real bridge gating has its own fixture.
 [[maybe_unused]] static HosPointer pointer = HOS_POINTER_INIT;
 [[maybe_unused]] static int mouse_captured, pointer_tracking, cursor_hidden;
 static HosPointer game_pointer = HOS_POINTER_INIT;
@@ -107,6 +108,7 @@ static int show(BOOL){return 0;}
 }
 
 namespace sdl {
+static int coop_mouse(float, float, int) { return 0; }
 [[maybe_unused]] static HosPointer pointer = HOS_POINTER_INIT;
 [[maybe_unused]] static int mouse_captured, ptr_in = 1, hos_posix_window[4] = {1, 0, 0, 0};
 [[maybe_unused]] static uint32_t ptr_held;
