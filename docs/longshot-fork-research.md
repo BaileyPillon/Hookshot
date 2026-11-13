@@ -12,8 +12,9 @@ stars, active/distinct development, platform changes or noteworthy features. Sou
 on the integrations, compatibility boundaries and license questions.
 
 Public GitHub search, surviving fork networks and relevant community links were used alongside the APIs. No relevant
-repositories were found in the authenticated account's starred list. No additional personal bookmark URLs were supplied;
-this report does not claim to have searched private browser bookmarks. Original Hookshot and Fritchii URLs returned 404;
+repositories were found in the authenticated account's starred list. A follow-up read-only scan of six local Chromium
+bookmark files and one Firefox bookmark database found no matching GitHub project bookmarks; unrelated bookmarks
+and browsing history were not exported. Original Hookshot and Fritchii URLs returned 404;
 that establishes availability, not the reason they disappeared. Renamed, private or unindexed forks can be missed.
 
 The requested “frichi” and “lichi” were interpreted as **Fritchii** and **Lichii**. Hookshot is the native Switch 2 remake

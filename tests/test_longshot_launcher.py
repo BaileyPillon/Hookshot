@@ -111,6 +111,21 @@ class LauncherTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 core.profile_folder(self.game, number)
 
+    def test_first_launch_creates_profile_parents_before_start(self):
+        (self.game / ("hookshot.exe" if os.name == "nt" else "hookshot")).touch()
+        (self.game / "image.bin").touch()
+        (self.game / "romfs").mkdir()
+        def started(command, **kwargs):
+            user = Path(command[-1])
+            self.assertTrue(user.is_dir())
+            self.assertEqual(user.name, "profile-4")
+            self.assertFalse((self.game / "user/save").exists())
+            (user / "startup-marker").write_text("isolated")
+            return "child"
+        with patch.object(core.subprocess, "Popen", side_effect=started):
+            self.assertEqual(core.start_game(self.game, 4), "child")
+        self.assertEqual((core.profile_folder(self.game, 4) / "startup-marker").read_text(), "isolated")
+
     def test_ocarina_recomp_portuguese_save_layout(self):
         path = self.root / "ocarina" / "perfil" / "save" / self.source.name
         path.mkdir(parents=True)

@@ -177,9 +177,7 @@ class Launcher:
 
     def play(self):
         self.require_game()
-        core.closed_games()
-        command, env = core.launch_plan(self.game, int(self.profile.get()), self.romfs)
-        self.child = subprocess.Popen(command, cwd=self.game, env=env)
+        self.child = core.start_game(self.game, int(self.profile.get()), self.romfs)
         self.status.set(f"Started Longshot with save profile {self.profile.get()}.")
 
     def mods(self):

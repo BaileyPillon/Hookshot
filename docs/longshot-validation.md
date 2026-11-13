@@ -15,11 +15,12 @@ Branch: `feat/fork-feature-integration`. Upstream base: `4aee23659b9436dab2cd7be
 | Pinned tracker + compatibility patch | **Build and TypeScript checks passed; 15 tests passed, 11 skipped** | Five test files, public mapping/logic and parser checks. Skipped cases require private save fixtures, which were not added. |
 | Mod manager visual check | **Window, row selection, conflict winner and disable action observed** | Tested three authored synthetic mod folders; disabling one visibly changed the row to Off and enabled count from three to two. Screenshot in `docs/images/longshot-mod-manager.png`. |
 | Companion preparation | **Pinned archive export and compatibility patch applied** | Source exports stay under ignored `work/longshot-companions`; source submodules remain at the reviewed revisions. |
-| Launcher save operations | **11 tests passed** | Verified copies, original/profile isolation, rejection of incomplete/oversized saves and links, cleanup on simulated disk failure, and stopping publication when a game starts during import. |
+| Launcher save operations | **12 tests passed** | Verified copies, original/profile isolation, first-launch creation of missing profile parents, rejection of incomplete/oversized saves and links, cleanup on simulated disk failure, and stopping publication when a game starts during import. |
 | Launcher visual/function check | **Capture and restore observed in the Tk window** | An authored synthetic save was captured, listed and restored into profile 2. The source still contained both slots; the restored profile contained only the selected slot. Hardware advice displayed the detected CPU, RAM and GPU without writing settings. |
 | GitHub checks for `30acd9279cd1` | **All applicable checks passed** | Both Windows/Linux source-test shards, checkpoints, SPIR-V/workflow checks, Windows renderer/Builder, full DLSS+FSR link check, and Linux AppImage build. Release publication was intentionally skipped on this draft PR. |
 | Randomizer with local game assets | **Seed 1132026 generated; independent overlay verifier returned OK** | Chest/shop shuffle and patch consistency against the actual build's assets. Verifier reported 174 chests, 141 changed, and 63/64 shop slots changed. Does not prove progression logic or beatability. |
 | Co-op asset generation | **Completed from the local RomFS** | Generated child/adult puppet packs, HUD, and room data (3,599 placements in 257 rooms / 12 dungeons). Files remain local and outside ordinary active mods. Not a two-player gameplay result. |
+| Tracker runtime | **Window opened and parsed an isolated copy of the actual save** | Displayed slot 03 / Inside the Deku Tree, three hearts and three Skulltulas. Source saves were not used as the tracker's writable settings directory. Full-game mapping accuracy and overlay during gameplay still need acceptance. |
 
 Host toolchain: existing llvm-mingw from HookshotBuilder; co-op: Visual Studio 2022 x64/CMake; tracker: Node 24 and npm.
 The suite used the existing builder Python environment for its declared dependencies. This work did not change Windows,
@@ -38,6 +39,8 @@ GPU-driver, BIOS, monitor, or installed game's settings.
   the test process, keeping the same deadline bounds and external process timeout.
 - Tracker's npm lock omitted Windows optional dependency entries. Its skipped private-save suite also read the absent
   save at test collection time. The recorded patch repairs the lock and defers that read to `beforeAll` without removing assertions.
+- The launcher explicitly supplies `--user`, bypassing the native menu profile selector. It now creates a new profile's
+  parent directories before starting the game; the dedicated first-launch regression passes.
 
 Before the merge, the older Longshot suite had 285 passes, four failures and 23 skips. Three old failures were missing/wrong
 toolchain or Python dependencies; the other was a Windows path fixture. The newer upstream tests and correct existing

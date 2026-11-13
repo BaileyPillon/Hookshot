@@ -134,6 +134,17 @@ def launch_plan(game, number=1, romfs=None):
     return [str(executable), str(image), "--romfs", str(assets), "--user", str(user)], env
 
 
+def start_game(game, number=1, romfs=None):
+    closed_games()
+    command, env = launch_plan(game, number, romfs)
+    # Explicit --user bypasses native profile directory creation. Create all parents
+    # before the game starts, including a profile's first-ever launch.
+    user = profile_folder(game, number)
+    user.mkdir(parents=True, exist_ok=True)
+    plain_path(user)
+    return subprocess.Popen(command, cwd=game, env=env)
+
+
 def hardware_info():
     result = {"cpu": "Unknown", "ram_gib": None, "gpus": [], "platform": sys.platform}
     if os.name == "nt":
