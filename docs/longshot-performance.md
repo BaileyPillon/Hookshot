@@ -177,3 +177,19 @@ substantial run-to-run variation. The evidence supports retaining the tested cha
 FPS difference to them or promising a locked 60. The final comparison left the candidate installed in ordinary
 experimental mode; the dedicated randomizer and regular play installations were not updated. No fallback or strike
 marker was recreated during these four runs, and the saved environment still contains no loading/cache override.
+
+### Diagnostic sampling and process priority
+
+A separate 20-second all-thread sample of `844b897e` in the Market identifies CPU work as the next investigation:
+the presentation thread was running in about 79% of sampled instants, with draw translation, memory/mirror work and
+replay submission prominent. Main-thread waits and synchronization also matter. The sampled run averaged 55.05 FPS
+and used about five CPU cores, **including diagnostic overhead**. Sampled occupancy includes preemption and is not
+CPU instruction timing; the report's estimated savings are hypotheses, not achieved improvements. Raw stacks, binary
+wait-chain records and linker maps remain local; no game-derived symbols or data are published.
+
+With sampling markers removed, four 20-second standing windows in the same process alternated Normal and Above Normal
+priority. Normal averaged 59.802 and 59.984 FPS (p99 21.613/21.381 ms); Above Normal averaged 57.252 and 54.739
+(p99 27.375/29.438 ms). None had a frame over 50 ms. Higher priority was rejected and Normal restored before clean exit.
+The profiling switch remained enabled, but the sampler was inactive during these four windows. The earlier 20-second
+diagnostic-route windows were slower: 53.367 standing / 42.638 turning, with a 964.653 ms worst turning frame. These
+unfavourable observations remain recorded; diagnostic runs are not the main before/after performance evidence.
