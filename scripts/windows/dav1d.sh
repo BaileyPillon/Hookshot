@@ -21,8 +21,14 @@ for t in meson ninja nasm; do command -v "$t" >/dev/null || { echo "dav1d.sh: $t
 CC=$MINGW/bin/x86_64-w64-mingw32-clang
 [ -x "$CC" ] || [ -x "$CC.exe" ] || { echo "dav1d.sh: no x86_64-w64-mingw32-clang in $MINGW/bin"; exit 1; }
 
-curl -fL --retry 5 --retry-delay 10 --proto '=https' -o "$WORK/dav1d.tar.gz" \
-    "https://code.videolan.org/videolan/dav1d/-/archive/$DAV1D_VER/dav1d-$DAV1D_VER.tar.gz"
+if ! curl -fL --retry 5 --retry-delay 10 --proto '=https' -o "$WORK/dav1d.tar.gz" \
+    "https://code.videolan.org/videolan/dav1d/-/archive/$DAV1D_VER/dav1d-$DAV1D_VER.tar.gz"; then
+    # VideoLAN's read-only GitHub mirror has the same source files. Both archives
+    # must pass the unchanged DAV1D_TREE check below before any build runs.
+    echo "dav1d: VideoLAN archive unavailable; trying VideoLAN's GitHub mirror" >&2
+    curl -fL --retry 5 --retry-delay 10 --proto '=https' -o "$WORK/dav1d.tar.gz" \
+        "https://github.com/videolan/dav1d/archive/refs/tags/$DAV1D_VER.tar.gz"
+fi
 mkdir -p "$WORK/src" && tar -xzf "$WORK/dav1d.tar.gz" -C "$WORK/src" --strip-components=1
 # (GitLab's tag archives are made on demand: pinned by what they unpack to, as scripts/linux/deps.sh's tree_is)
 other=$(find "$WORK/src" ! -type f ! -type d -print -quit)
