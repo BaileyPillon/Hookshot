@@ -1,10 +1,12 @@
 """Longshot's local game, save and companion launcher (Python with Tk)."""
 import argparse
+import os
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 from pathlib import Path
 import subprocess
 import sys
+import tempfile
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 import uuid
@@ -22,6 +24,8 @@ class Launcher:
         self.pool = ThreadPoolExecutor(max_workers=1)
         self.busy, self.buttons = False, []
         self.child = None
+        self.journal = None
+        self.journal_session = None
         window.title("Longshot")
         window.geometry("1020x760")
         window.minsize(840, 640)
@@ -50,6 +54,7 @@ class Launcher:
         self.selector.pack(side="left")
         self.selector.bind("<<ComboboxSelected>>", lambda _: self.refresh())
         self.button(row, "Play Longshot", self.play).pack(side="left", padx=16)
+        self.button(row, "Play with journal", self.play_journal).pack(side="left")
         self.profile_text = tk.StringVar()
         ttk.Label(play, textvariable=self.profile_text, wraplength=860).pack(anchor="w", pady=(0, 20))
         ttk.Label(play, text="Tools", font=("Segoe UI", 13, "bold")).pack(anchor="w", pady=(8, 8))
@@ -183,7 +188,42 @@ class Launcher:
     def play(self):
         self.require_game()
         self.child = core.start_game(self.game, int(self.profile.get()), self.romfs)
+        self.journal_session = None
         self.status.set(f"Started Longshot with save profile {self.profile.get()}.")
+
+    def play_journal(self):
+        from longshot_journal import JournalWindow
+        game = self.require_game()
+        number = int(self.profile.get())
+        if self.child and self.child.poll() is None:
+            if not self.journal_session:
+                raise ValueError("This game started without the journal. Save and close it before choosing Play with journal.")
+            if self.journal and self.journal.window.winfo_exists():
+                self.journal.window.deiconify()
+                self.journal.window.lift()
+            else:
+                endpoint, notes, original_profile = self.journal_session
+                self.journal = JournalWindow(tk.Toplevel(self.window), endpoint, notes, str(original_profile))
+                self.status.set(f"Reopened Adventure Journal for the running profile {original_profile}.")
+            return
+        if self.journal and self.journal.window.winfo_exists():
+            self.journal.close()
+        endpoint = "longshot-journal-" + uuid.uuid4().hex
+        if os.name != "nt":
+            endpoint = str(Path(tempfile.gettempdir()) / (endpoint + ".sock"))
+        window = tk.Toplevel(self.window)
+        try:
+            notes = game / "longshot-journal" / f"profile-{number}.json"
+            journal = JournalWindow(window, endpoint, notes,
+                                    str(number), start_reader=False)
+            self.child = core.start_game(game, number, self.romfs, journal_endpoint=endpoint)
+        except Exception:
+            window.destroy()
+            raise
+        self.journal = journal
+        self.journal_session = (endpoint, notes, number)
+        journal.reader.start()
+        self.status.set(f"Started profile {number} with Adventure Journal. Load a save to begin live tracking.")
 
     def mods(self):
         self.require_game()
@@ -217,6 +257,7 @@ class Launcher:
             number = int(values["profile"].get())
             self.child = core.start_coop(game, number, values["server"].get().strip(), int(values["port"].get()),
                                          values["name"].get(), values["password"].get(), self.romfs)
+            self.journal_session = None
             values["password"].set("")
             self.status.set(f"Started co-op with profile {number}. Connection status appears in the game.")
             dialog.destroy()
@@ -292,6 +333,8 @@ class Launcher:
             self.status.set("Wait for the current operation to finish before closing.")
             return
         self.pool.shutdown(wait=False)
+        if self.journal and self.journal.window.winfo_exists():
+            self.journal.close()
         self.window.destroy()
 
 

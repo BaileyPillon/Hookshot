@@ -57,8 +57,10 @@ bindings stay intact. The newer [Longshot comparison](https://www.reddit.com/r/S
 also includes lighting complaints alongside positive performance reports; it does not establish compatibility on this PC.
 
 The newest sparse-VRAM branch was reviewed but not combined: its primary benefit is fitting smaller VRAM budgets,
-and the target card has 16 GiB. Ocarina Atlas is a noteworthy MIT live-tracker candidate, but currently targets emulator
-RPC and needs a native adapter plus map-asset review. Neither is advertised as installed. Fritchii-ZeroStutter's newer
+and the target card has 16 GiB. Ocarina Atlas targets emulator RPC; its README limits MIT to newly authored components
+and identifies an inherited base without a license plus separately owned map art. It was not imported. The November 14
+iteration builds an original Adventure Journal on the native sampler instead; see [player features](longshot-player-roadmap.md).
+Fritchii-ZeroStutter's newer
 frame-generation claims do not reverse this user's confirmed flickering result; frame generation stays off.
 
 The follow-up runtime work also backports MagicBeanDev/Longshot's GPL occlusion-query fix at
@@ -191,7 +193,7 @@ README descriptions below are discovery evidence, not independent gameplay verif
 | [MagicBeanDev/LongshotLauncher](https://git.magicbean.dev/MagicBeanDev/LongshotLauncher) | 2 | `0e6e1d78210e` | Distinct Team MagicBean community project, not BaileyPillon/Longshot. Reviewed release/feature history; no wholesale merge of its diverged runtime or replacement of this fork. Save importer, profile separation and launcher workflows independently covered here. |
 | [dev-ewann/Longshot](https://github.com/dev-ewann/Longshot) | 12 | [01d3ee79e732](https://github.com/dev-ewann/Longshot/tree/01d3ee79e732a9978ae5a55f2953e171c1bd32bd) | Surviving copy at the same reviewed revision as madebyjordan/Longshot; no additional distinct feature established by this head. |
 | [Z-TOON/Hookshot](https://github.com/Z-TOON/Hookshot) | 11 | [1ea715d1d91c](https://github.com/Z-TOON/Hookshot/tree/1ea715d1d91c82bb421b6aa95a21c6b625ac8eea) | Surviving personal Hookshot copy. Reviewed the distinct 1ea715d1 capture-to-mirror compute-copy change (181 renderer lines and a regression fixture). Deferred from this bundle: upstream evidence mainly reduces GPU upload time, while local profiling points to CPU submission costs. Shared renderer history overlaps the existing base. |
-| [antonioalvromero/Ocarina-Atlas](https://github.com/antonioalvromero/Ocarina-Atlas) | 5 | [96c92a9ea7f7](https://github.com/antonioalvromero/Ocarina-Atlas/tree/96c92a9ea7f7e2ebfc16798ce9fdf5f6584fa8fe) | MIT live atlas/dungeon/Skulltula tracker candidate. Its live RPC targets Lichii/Fritchii, not the native bridge. Requires an explicit adapter and map-asset provenance review; not installed or represented as compatible. Existing Boomerang save tracker remains available. |
+| [antonioalvromero/Ocarina-Atlas](https://github.com/antonioalvromero/Ocarina-Atlas) | 5 | [96c92a9ea7f7](https://github.com/antonioalvromero/Ocarina-Atlas/tree/96c92a9ea7f7e2ebfc16798ce9fdf5f6584fa8fe) | README limits MIT to new components; inherited base has no license, art has separate owners. Full app not imported. Emulator RPC differs; original native Adventure Journal implemented instead. Illustrated maps and full per-location live completion remain future work. |
 
 ## Verification and follow-up
 

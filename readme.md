@@ -1,8 +1,10 @@
 > **Longshot development fork:** the `feat/fork-feature-integration` branch combines the Hookshot v2.2.0-rc.1 foundation
 > with a launcher/checkpoint browser, save profiles and verified imports, an adjustable FPS display, a mod manager,
-> optional co-op, a randomizer and a completion tracker.
+> optional co-op, a randomizer, a completion tracker and an original live Adventure Journal with personal waypoints.
 > Read [features and setup](docs/longshot-features.md), [the fork research](docs/longshot-fork-research.md), and
 > [validation and pending gameplay checks](docs/longshot-validation.md). This is not a tested replacement for a stable play installation.
+> See the [ranked player-facing feature roadmap](docs/longshot-player-roadmap.md) for the item wheel, live companion,
+> in-game checkpoints and other requested additions, with their current implementation status.
 
 <h1 align="center">
   <br>

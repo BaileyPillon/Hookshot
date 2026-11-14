@@ -135,9 +135,18 @@ def launch_plan(game, number=1, romfs=None):
     return [str(executable), str(image), "--romfs", str(assets), "--user", str(user)], env
 
 
-def start_game(game, number=1, romfs=None):
+def start_game(game, number=1, romfs=None, *, journal_endpoint=None):
     closed_games()
     command, env = launch_plan(game, number, romfs)
+    if journal_endpoint is not None:
+        # The companion receives samples over one local connection. It neither
+        # exposes a network server nor enables arbitrary memory access.
+        if not isinstance(journal_endpoint, str) or not journal_endpoint or len(journal_endpoint) > 180:
+            raise ValueError("Invalid local journal endpoint")
+        env["HOS_CONTROL"] = journal_endpoint
+        env["HOS_CONTROL_MEM"] = "0"
+        env.pop("HOS_INPUT_EXCLUSIVE", None)
+        env.pop("HOS_INPUT_SCRIPT", None)
     # Explicit --user bypasses native profile directory creation. Create all parents
     # before the game starts, including a profile's first-ever launch.
     user = profile_folder(game, number)

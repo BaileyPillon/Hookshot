@@ -5,7 +5,7 @@ steer it and read its state from a shell, a test or a coding agent. Standard lib
 
     launch GAME_DIR [--data DIR] [--headless]   start the game with the bridge on; prints the socket's path
            [--save FOLDER [--slot NN]]          a copy of a save folder (one slot of it) as the run's saves
-    status                                      frame, fps, draws a frame, state, window, version
+    status                                      frame, fps, draws, state, window, version, OoT snapshot
     press A+B [--frames 8] [--exclusive]        buttons held for some frames (the reply once they are let go)
     stick L 0 1 [--frames 60]                   a stick at x, y (-1 to 1)
     sequence '0:A/8,60:A/8' [--hos]             steps, <at>:<buttons>[/<frames held>] (--hos: HOS_INPUT_SCRIPT's s and ms)
@@ -17,7 +17,8 @@ steer it and read its state from a shell, a test or a coding agent. Standard lib
     age [child|adult] [--arrive SECS]           (OoT) the Debug tab's Switch age (none: the other age), reloading the map
     option get [NAME]  /  option set NAME VALUE the Insert menu's settings
     saves  /  slots [--thumbs DIR]              the save folder the game uses; its slots, newest first
-    watch [--events present,state,log,map] [--every 60] [--log TEXT] [--count N]
+    watch [--events present,state,log,map,oot] [--every 60] [--log TEXT] [--count N]
+          [--flags NAME,0xHASH,...] [--changes]    oot: watched values and changed flags
     mem read ADDR SIZE [--format hex|u8|u16|u32|u64|f32]   read guest memory (HOS_CONTROL_MEM=ro or rw)
     mem write ADDR HEX                          write guest memory (HOS_CONTROL_MEM=rw); aliases: ro->r/read, rw->readwrite
     quit                                        the game exits
@@ -46,6 +47,50 @@ class Failed(Exception):
         self.code = code
 
 
+def open_windows_pipe(name, timeout):
+    """Keep the Win32 error code: CRT open() can translate ERROR_PIPE_BUSY to EINVAL.
+
+    Wait only for an existing busy pipe, bounded by this connection's deadline. A successful wait does not own an
+    instance; another client may take it before CreateFileW, so that race is retried. Missing/denied pipes fail fast.
+    """
+    import ctypes
+    from ctypes import wintypes
+    import msvcrt
+
+    kernel = ctypes.WinDLL("kernel32", use_last_error=True)
+    kernel.CreateFileW.argtypes = [wintypes.LPCWSTR, wintypes.DWORD, wintypes.DWORD, ctypes.c_void_p,
+                                  wintypes.DWORD, wintypes.DWORD, wintypes.HANDLE]
+    kernel.CreateFileW.restype = wintypes.HANDLE
+    kernel.WaitNamedPipeW.argtypes = [wintypes.LPCWSTR, wintypes.DWORD]
+    kernel.WaitNamedPipeW.restype = wintypes.BOOL
+    kernel.CloseHandle.argtypes = [wintypes.HANDLE]
+    kernel.CloseHandle.restype = wintypes.BOOL
+    deadline = time.monotonic() + max(0.0, timeout)
+    while True:
+        handle = kernel.CreateFileW(name, 0xC0000000, 0, None, 3, 0, None)  # read/write, OPEN_EXISTING
+        if handle != ctypes.c_void_p(-1).value:
+            try:
+                fd = msvcrt.open_osfhandle(handle, os.O_RDWR | os.O_BINARY)
+            except BaseException:
+                kernel.CloseHandle(handle)
+                raise
+            try:
+                return os.fdopen(fd, "r+b", buffering=0)  # descriptor now owns the native handle
+            except BaseException:
+                os.close(fd)
+                raise
+        error = ctypes.get_last_error()
+        if error != 231:  # ERROR_PIPE_BUSY; all other errors are real failures
+            raise ctypes.WinError(error)
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            raise ctypes.WinError(121)  # ERROR_SEM_TIMEOUT
+        if not kernel.WaitNamedPipeW(name, max(1, min(1000, int(remaining * 1000)))):
+            error = ctypes.get_last_error()
+            if error != 121:
+                raise ctypes.WinError(error)
+
+
 class Bridge:
     """One connection: requests with ids, replies matched to them, events kept for watch"""
 
@@ -55,15 +100,7 @@ class Bridge:
             if WINDOWS:
                 name = path if path.startswith("\\\\.\\pipe\\") else "\\\\.\\pipe\\" + path
                 self.sock = None
-                deadline = time.monotonic() + timeout
-                while True:   # (the bridge keeps one instance waiting: a busy pipe is waited for)
-                    try:
-                        self.pipe = open(name, "r+b", buffering=0)
-                        break
-                    except OSError as e:
-                        if getattr(e, "winerror", 0) != 231 or time.monotonic() > deadline:   # ERROR_PIPE_BUSY
-                            raise
-                        time.sleep(0.02)
+                self.pipe = open_windows_pipe(name, timeout)
             else:
                 self.sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
                 self.sock.settimeout(timeout)
@@ -265,7 +302,7 @@ def run(a):
                 r["frame"], r["fps"], r["state"], "-" if r.get("draws") is None else "%.0f" % r["draws"],
                 "%dx%d" % (win["width"], win["height"]) if win else "-", plain_text(r.get("map") or "-"),
                 " (%s%s)" % (plain_text(g.get("age", "?")), ", " + flags if flags else "") if g else "",
-                plain_text(r.get("version", ""))))
+                plain_text(r.get("version", ""))) + ("\ngame   " + json.dumps(g, ensure_ascii=True) if g else ""))
         elif a.command in ("press", "stick", "sequence"):
             args = {"exclusive": True if a.exclusive else None, "wait": False if a.no_wait else None}
             if a.command == "press":
@@ -386,7 +423,9 @@ def run(a):
             events = [e for e in (a.events or ("" if a.log else "present,state")).split(",") if e]
             if a.log and "log" not in events:
                 events.append("log")
-            check(b.request("subscribe", events=events, every=a.every, log=a.log))
+            check(b.request("subscribe", events=events, every=a.every, log=a.log,
+                            flags=a.flags.split(",") if a.flags is not None else None,
+                            changes=True if a.changes else None))
             n = 0
             while a.count is None or n < a.count:
                 msg = b.line(3600 * 24)
@@ -406,6 +445,8 @@ def run(a):
                 elif msg["event"] == "map":
                     print("map    frame %d: %s -> %s" % (msg["frame"], plain_text(msg["from"] or "-"), plain_text(msg["map"])),
                           flush=True)
+                elif msg["event"] == "oot":
+                    print("game   " + json.dumps(msg["game"], ensure_ascii=True), flush=True)
                 else:
                     print(json.dumps(msg), flush=True)
         return 0
@@ -576,10 +617,12 @@ def main(argv=None):
     q.add_argument("name", nargs="?")
     q.add_argument("value", nargs="?")
     q = sub.add_parser("watch")
-    q.add_argument("--events", help="present,state,log,map (default present,state; with --log alone, log)")
+    q.add_argument("--events", help="present,state,log,map,oot (default present,state; with --log alone, log)")
     q.add_argument("--every", type=int, default=60)
     q.add_argument("--log", help="log lines that contain this text (adds log to the events)")
     q.add_argument("--count", type=int, help="stop after this many events")
+    q.add_argument("--flags", help="with --events oot: comma-separated flag names or 0x and eight hex digits")
+    q.add_argument("--changes", action="store_true", help="with --events oot: changed Bool/Int/Enum/UInt flags")
     q = sub.add_parser("mem")
     q.add_argument("action", choices=["read", "write"])
     q.add_argument("addr", help="a guest address, decimal or 0x...")

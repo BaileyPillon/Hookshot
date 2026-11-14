@@ -132,5 +132,42 @@ failed `test_prepare_stall.py` fixture printed a waiting message after its simul
 unchanged isolated rerun passed in 52.4 seconds with the game and compilers closed. All 509 checks therefore have
 passing coverage, but this was not a single all-green sweep. No assertion or timeout was relaxed.
 
-Gameplay results follow when finished. Source tests, successful compilation, checkpoint preparation and actual
-gameplay acceptance are separate gates.
+The memory comparison encountered system pressure and competing workloads; see [performance](longshot-performance.md).
+All 13 applicable GitHub jobs passed at `6b0fd4f3`. No clean memory/FPS improvement is claimed for that change.
+
+## Live state and Adventure Journal, 14 November 2026
+
+- The state interface's full local suite passed **511 checks, zero failures and 43 declared skips** in 587 seconds.
+  Compiled/native-pipe fixtures cover bounded scanning, idle sampling, multiple clients, reconnects, watch replacement,
+  typed flags, overflow and stale timestamps. Three negative mutation trials failed at the intended assertions.
+- The port exposed a real Windows busy-pipe failure with rapid connections. The repaired client uses explicit Win32
+  handle ownership and bounded retries. Seven contract cases and the previously failing multi-client fixture passed.
+- The native build compiled in 183 seconds with zero failures and linked successfully. Content fingerprint `793ee543`
+  identifies the experimental game, not a Git commit. This host-only iteration reused the valid fresh shader preparation.
+- The matching checkpoint was restored into a private `work/` save folder and actually loaded in the Deku Tree.
+  Two simultaneous native subscribers each returned three increasing-frame samples; watched health/rupees matched
+  core fields. Unsubscribe/reconnect and a screenshot request succeeded. Game exit code was zero.
+- The original Python/Tk journal displayed real **3/3 hearts, 44 rupees, 3/100 Gold Skulltulas and 0/4 loose pieces**.
+  A waypoint was entered and saved through the UI, survived companion restart, and updated to two metres away after
+  controlled Link movement. The direction indicator accepted the native negative yaw after a correction. The journal
+  returned to its disconnected empty state when the private game closed. Screenshots are in the feature guide.
+- The new launcher button and layout were visually checked. Launch environment/profile isolation is unit-tested;
+  the gameplay companion was attached to the private test runner's game rather than launching a writable real profile
+  through the button. Physical PS5 input and audible output were not retested.
+- Compact/expanded view switching was visually checked without launching another game. The compact layout fits both
+  counter rows and controls; expanding restores the full layout. The compact screenshot shows the honest disconnected state.
+- Ten journal tests cover unknown values, stale/duplicate/rewound samples, pickup changes, bounded trails, teleport/
+  floor gaps, profile separation, persisted notes, failed-write recovery, stale-window protection and read-only commands.
+  All 17 launcher checks passed, including the added child-only endpoint/memory-access/input-isolation case. A first
+  Windows assertion compared short/long spellings of the same temporary path; resolving both paths corrected the fixture.
+- The expanded full sweep finished with **512 passes, zero failures and 43 declared skips in 837 seconds**.
+  The final journal receipt-time guard was separately rerun through all ten journal cases after its last edit;
+  queued samples keep their original receipt time when a modal delays the UI. Original state-stream tests were not weakened.
+
+The runtime readback retained the selected graphics/controller preferences; the experimental options file was byte-identical.
+All 19 protected regular-install files and all 10 protected experimental-profile-4 files matched their prior SHA-256 values.
+The test wrote only its private native save folder and private waypoint file. Blender and other active work were not stopped.
+This was a functional check: **no clean 60 FPS claim**, pickup-animation gameplay test or complete map/collectible coverage.
+
+Local evidence: `work/ranked-iteration/state-*.log`, `journal-full-tests.log`, `journal-protected-check.json`,
+and `work/longshot-performance/journal-functional-a/`. The game, its save data and raw live payloads remain ignored.

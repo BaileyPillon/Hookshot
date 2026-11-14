@@ -132,6 +132,22 @@ class LauncherTests(unittest.TestCase):
         (path / "account.sav").write_bytes(b"account")
         self.assertIn(str(path), core.oot_saves.find_saves(str(self.root / "ocarina")).values())
 
+    def test_journal_launch_uses_private_endpoint_and_preserves_parent_environment(self):
+        (self.game / ("hookshot.exe" if os.name == "nt" else "hookshot")).touch()
+        (self.game / "image.bin").touch()
+        (self.game / "romfs").mkdir()
+        inherited = {"HOS_CONTROL": "other-game", "HOS_CONTROL_MEM": "rw", "HOS_INPUT_SCRIPT": "A",
+                     "HOS_INPUT_EXCLUSIVE": "1"}
+        with patch.dict(os.environ, inherited), patch.object(core.subprocess, "Popen") as started:
+            core.start_game(self.game, 3, journal_endpoint="longshot-journal-test")
+            command, env = started.call_args.args[0], started.call_args.kwargs["env"]
+            self.assertEqual(env["HOS_CONTROL"], "longshot-journal-test")
+            self.assertEqual(env["HOS_CONTROL_MEM"], "0")
+            self.assertNotIn("HOS_INPUT_SCRIPT", env)
+            self.assertNotIn("HOS_INPUT_EXCLUSIVE", env)
+            self.assertEqual(Path(command[-1]).resolve(), core.profile_folder(self.game, 3).resolve())
+            self.assertEqual({key: os.environ[key] for key in inherited}, inherited)
+
     def test_hardware_advice_does_not_claim_unknown_gpu_support(self):
         names = [row[0] for row in core.recommendations({})]
         self.assertNotIn("Upscaling", names)

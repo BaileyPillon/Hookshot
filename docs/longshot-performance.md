@@ -269,3 +269,20 @@ are sampled once per second. Their process page-fault count includes soft faults
 
 Shader preparation and source builds/tests finish before gameplay measurements. Results and limitations follow
 when those runs complete; no local memory reduction or FPS gain is claimed from upstream measurements alone.
+
+The first control (`ranked-old-a`) was stopped during loading as system commit approached its limit; it produced
+no accepted measurement window and exited 0. The following candidate (`ranked-new-a`) reached the Market. Its
+30-second standing window measured **31.423 FPS, p99 187.836 ms, worst 560.950 ms and 97 frames over 50 ms**.
+The median process private allocation was 24.501 GiB and working set 12.396 GiB; minimum available system RAM
+was 12.880 GiB. These are observations under a changing workload, not a controlled speedup or memory-saving result.
+
+The turning window was rejected: two samples changed the draw-count-derived `state` to `loading`, though the
+native game flags remained event=false/loading=false. This conservative gate is retained; no turning FPS claim is
+made. A separate Windows GPU-engine sample at 23:36:11 ET showed Blender at **86.6%** and the game at **1.2%** on
+the 3D engine. This identifies a concurrent GPU workload, not an exact attribution of every slow frame. The game
+exited 0. The user chose to keep Blender running and continue development. A clean same-route A/B and sustained
+60 FPS acceptance remain pending; no application was stopped or global PC setting changed to force a benchmark.
+
+Subsequent test launches have a child-only memory guard: two consecutive samples below 3 GiB of remaining system
+commit or 512 MiB available physical RAM request a clean exit of that private game. The guard records its reason;
+such runs cannot be accepted as completed performance measurements. It does not manage any other process.

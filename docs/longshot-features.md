@@ -2,9 +2,11 @@
 
 This branch combines Hookshot **v2.2.0-rc.1** with Longshot's checkpoint foundation, separate save profiles,
 adjustable FPS text, a mod manager, hold-toggle controls, damage scaling, selected native renderer/gameplay fixes,
-and pinned co-op, randomizer and completion-tracker integrations.
+an original live Adventure Journal, and pinned co-op, randomizer and completion-tracker integrations.
 It is a development build. See [validation](longshot-validation.md) for exactly what was tested and what still needs gameplay acceptance.
 The [ranked development backlog](longshot-roadmap.md) records the implementation order and remaining acceptance gates.
+The [player feature ranking](longshot-player-roadmap.md) prioritizes the item wheel, live companion, checkpoints,
+co-op customization and other noticeable additions, with evidence and explicit implementation boundaries.
 
 The [research report](longshot-fork-research.md) explains the selection, licenses and exclusions. The existing
 play installation is not updated by these source changes or the companion preparation commands.
@@ -34,6 +36,58 @@ The bundle also fixes complete controller layout selection after a cleared face-
 timing and remapped-note recall, and floor-web reactions above 60 FPS. It includes CPU-path changes, conservative
 occlusion handling and Lichii-derived shadow-map table support. See the [backport provenance](../integrations/feature-backports.md)
 and [validation](longshot-validation.md); these fixes do not imply locked 60 FPS in all scenes.
+
+## Adventure Journal: live trail, waypoints and collection counters
+
+In the launcher, select a profile and choose **Play with journal**. It starts the game with a unique local connection
+and opens the companion. Load a save, then use the journal on a second monitor or enable **Keep on top**.
+**Compact** reduces it to a small live counter/area window for single-monitor play; turn it off to return to the
+previous full-window size and position. Hidden trail drawing is suspended while compact; sampling continues.
+
+- Follow the current area, child/adult state, health, rupees, Gold Skulltula count and loose heart pieces.
+- See a session trail of Link's movement. This is a breadcrumb trace, **not an illustrated map or dungeon floor plan**.
+  Gaps separate area changes, loading, large jumps and abrupt vertical changes; north is up. Gradual movement between
+  floors can share a trail; this view does not identify dungeon floors.
+- Name and **Mark shown spot** to remember a location. Select a waypoint for distance, direction and height difference.
+  When paused, the explicitly labelled last position is the one marked. Disconnected games cannot add a waypoint.
+- See area visits and collection-counter changes in the session feed. Unknown values remain unknown; an older save
+  does not imply a new pickup. Individual collectible locations are not automatically marked from a total count.
+- Close/reopen the journal while its launcher-started game keeps running. Choose **Play with journal** again to reopen
+  that session. A game originally started without the journal needs a normal saved restart to enable the connection.
+
+![Adventure Journal with real copied-save gameplay](images/longshot-adventure-journal.png)
+
+Notes live in `<experimental game>/longshot-journal/profile-N.json`, separately from native saves. Writes use a staged
+file and detect notes changed by another window. Trail and feed are bounded and session-only; reopening starts a new
+trail while retaining named waypoints. Child/adult waypoints are separate. The companion only subscribes to sampled
+data; it sends no game input, arbitrary memory access or save writes. Its connection is local, not a LAN web server.
+
+The original implementation uses Python/Tk, like the existing launcher. No Atlas base code, artwork or dataset is
+bundled. Atlas's README documents separate terms for those parts; see the [research correction](longshot-player-roadmap.md#atlas-boundary-discovered-during-implementation).
+The native sampler must be present in the experimental executable; build fingerprint `793ee543` was tested locally.
+This is functional companion validation, not evidence of a frame-rate improvement or full-game collectible accuracy.
+
+## Live data for trackers and developer tools
+
+The optional local control bridge now supplies sampled Link position, facing/camera direction, health, rupees,
+map, age, action prompt and music through `status`. Explicit `oot` subscriptions can watch up to 64 named or hashed
+game flags. Samples carry their original frame/time; paused or loading games do not manufacture fresh data.
+
+For a game already launched with the bridge enabled, a client can request three samples with:
+
+```powershell
+python -I scripts/hookshot_ctl.py --sock longshot-tools --json watch --events oot --every 60 --flags PlayerStatus.Life --count 3
+```
+
+The socket/pipe name must match the game's `HOS_CONTROL`. See [the protocol and launch guide](control.md) for setup.
+Ordinary play leaves the bridge off. Merely enabling it does not continuously scan the game; a pending status request
+or due subscription is needed. Full changed-flag scanning requires the additional `--changes` option and has a
+measurable cost in upstream testing, so leave that off when a few named values suffice. Reads use copied samples;
+arbitrary memory access still requires its separate setting. Windows multi-client busy-pipe handling is covered too.
+
+The Adventure Journal above consumes this interface. It is not a completed Atlas overlay, exhaustive item tracker,
+or restorable world save state.
+The [validation record](longshot-validation.md) distinguishes synthetic transport tests from actual game observation.
 
 ## Launcher, save imports and checkpoint browser
 

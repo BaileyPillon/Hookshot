@@ -487,6 +487,6 @@
     "stars_at_review": 5,
     "reported_license": "MIT",
     "access_error": null,
-    "decision": "MIT live atlas/dungeon/Skulltula tracker candidate. Its live RPC targets Lichii/Fritchii, not the native bridge. Requires an explicit adapter and map-asset provenance review; not installed or represented as compatible. Existing Boomerang save tracker remains available."
+    "decision": "Live atlas/dungeon/Skulltula tracker reference. README limits MIT to newly authored components; inherited oot-remake-map base has no license and map art has separate owners. Full application not imported. Native RPC differs. An original live Adventure Journal was implemented instead; full illustrated map and per-location live collectible tracking remain future work."
   }
 ]

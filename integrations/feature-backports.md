@@ -22,6 +22,7 @@ the table records attribution for the adapted portions. No game-generated cache,
 | [a4c77174023a3cbe7945fba16f18c0e0bbbcd3f7](https://git.magicbean.dev/MagicBeanDev/Longshot/commit/a4c77174023a3cbe7945fba16f18c0e0bbbcd3f7) | wertredgreen | Mapped-page counting and capped used-memory reporting only; preserve exact legacy query results for A/B |
 | [d906c8f4276652b51c5e30dc5e938648c9e8d42d](https://git.magicbean.dev/MagicBeanDev/Longshot/commit/d906c8f4276652b51c5e30dc5e938648c9e8d42d) | jarynclouatre | Cancel pending game-menu clicks when the pointer leaves or another menu takes focus |
 | [c0442078d32e13b7073a0451129296948e6fd1c8](https://git.magicbean.dev/MagicBeanDev/Longshot/commit/c0442078d32e13b7073a0451129296948e6fd1c8) | jarynclouatre | Hide the cursor during controller/keyboard play; genuine mouse movement restores it |
+| [1ea02558e43fd785dc3e926a6fc21b499a257b5e](https://git.magicbean.dev/MagicBeanDev/Longshot/commit/1ea02558e43fd785dc3e926a6fc21b499a257b5e) | mooki | Demand-driven read-only OoT state samples and bounded per-client flag subscriptions |
 
 ## Compatibility choices
 
@@ -45,6 +46,20 @@ the table records attribution for the adapted portions. No game-generated cache,
 - Save-copy adaptation retains Longshot discovery/profile naming and the backup-inside-target guard. Staging happens
   on the destination volume. It handles reported copy/rename failures; it is not a crash-atomic filesystem transaction.
 - Mouse adaptations retain the optional co-op hover hook and hold-toggle controls. Regression fixtures check both.
+- The state-stream adaptation retains the existing `hookshot_ctl.py` filename, log path and Longshot development
+  observer. It adds fields/events to control protocol 1, not to the renderer ABI. `HOS_CONTROL` stays unset for ordinary
+  play; `changes` scanning stays off unless requested. The port exposed a Windows client race: CRT `open()` mapped
+  busy-pipe errors to EINVAL. Longshot now opens with `CreateFileW` and a deadline-bounded `WaitNamedPipeW`, retaining
+  fast failure for missing/denied pipes and explicit handle ownership. This client repair is local development.
 
 See [research](../docs/longshot-fork-research.md) and [validation](../docs/longshot-validation.md) for the distinction
 between source regression tests, local gameplay observation and still-unverified features.
+
+## Original Adventure Journal
+
+`scripts/longshot_journal.py` and its launcher integration are original Longshot code, informed by the live-companion
+use case demonstrated by Atlas and Boomerang. They consume the GPL native sampler above. The two watched stock names
+are corroborated by Boomerang's MIT `data/save-mapping.json` at the pinned tracker revision; they are identifier facts,
+not an imported checklist or source implementation. No Atlas code, dataset, art or analytics is included. Its README
+limits MIT to newly authored components and identifies an unlicensed inherited application base; the earlier short
+catalog description does not establish permission to bundle the whole app.

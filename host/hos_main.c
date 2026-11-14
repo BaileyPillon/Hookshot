@@ -1577,6 +1577,8 @@ void hos_oot_lift_player(Ctx *c, uint64_t actor) {
     if (!TryAcquireSRWLockExclusive(&cheats_lock)) return;
     if (hos_dev_enabled()) oot_dev_observe(c, actor);
     oot_update_player_cheats(c, actor, components);
+    void hos_oot_state_tap(uint64_t actor);   /* the control bridge's copied snapshot and per-connection samples */
+    hos_oot_state_tap(actor);
     ReleaseSRWLockExclusive(&cheats_lock);
 #else
     (void)c;
