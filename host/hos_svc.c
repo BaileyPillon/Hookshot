@@ -26,7 +26,7 @@ static uint64_t get_info(uint32_t id0, uint64_t id1, int *ok) {
     case 4: return HOS_HEAP_BASE;                          /* HeapRegionAddress */
     case 5: return HOS_SPACE_END - HOS_HEAP_BASE;          /* HeapRegionSize */
     case 6: return hos_total_memory;                       /* TotalMemorySize */
-    case 7: return hos_program_size + hos_heap_size;       /* UsedMemorySize */
+    case 7: return hos_used_memory(hos_program_size, hos_program_size + hos_heap_size);       /* UsedMemorySize */
     case 8: return 0;                                      /* DebuggerAttached */
     case 11: return 0x5A3C9E1F0B7D2468ULL ^ (id1 * 0x9E3779B97F4A7C15ULL);   /* RandomEntropy */
     case 12: return 0x08000000ULL;                         /* AslrRegionAddress */
@@ -42,7 +42,7 @@ static uint64_t get_info(uint32_t id0, uint64_t id1, int *ok) {
         return ctx_page;
     }
     case 21: return hos_total_memory;                      /* TotalNonSystemMemorySize */
-    case 22: return hos_program_size + hos_heap_size;      /* UsedNonSystemMemorySize */
+    case 22: return hos_used_memory(hos_program_size, hos_program_size + hos_heap_size);      /* UsedNonSystemMemorySize */
     case 23: return 1;                                     /* IsApplication */
     /* the Switch 2 SDK's (ids from Eglantine's svc_types.h / svc_info.cpp) */
     case 24: return 256;                                   /* FreeThreadCount */
@@ -112,11 +112,7 @@ static void release_locked(uint64_t mutex) {
 #if (defined(__x86_64__) || defined(_M_X64)) && !defined(__EMSCRIPTEN__)
 #include <emmintrin.h>
 static int spin_for_release(uint64_t mutex, uint32_t held) {
-    static int64_t limit = -1;
-    if (limit < 0) {
-        const char *e = getenv("HOS_SPIN_US");
-        limit = (e ? atoll(e) : 20) * 1000;
-    }
+    const int64_t limit = hos_spin_ns();
     static int misses[256], tries[256];
     const unsigned slot = (unsigned)(mutex >> 3 ^ mutex >> 11) & 255;
     const int m = __atomic_load_n(&misses[slot], __ATOMIC_RELAXED);
@@ -433,7 +429,11 @@ void a64_svc(Ctx *c, uint32_t imm) {
         return;
     case 0x0B: { /* SleepThread(ns) */
         void hos_sleep_logged(int64_t ns, uint64_t lr);
+        extern _Thread_local int64_t hos_slept_ns[2];   /* (hos_thread.c: the FPS counter's Breakdown, while it shows) */
+        extern volatile int hos_fps_timing;
+        const int64_t t0 = hos_fps_timing ? hos_now_ns() : 0;
         hos_sleep_logged((int64_t)c->x[0], c->x[30] | 1);
+        if (t0) hos_slept_ns[1] += hos_now_ns() - t0;
         return;
     }
     case 0x10:   /* GetCurrentProcessorNumber */

@@ -27,7 +27,7 @@ std::atomic<int> pending{0};
 bool started = false;
 
 // (a job that throws: the game ended at once ("approach Malon, crash": an exception escaped a worker, KERNELBASE's RaiseException
-// with no handler, 2026-11-08). It is logged and let go; what it was making stays not ready and is asked for again)
+// with no handler, 2026-11-08). Resource jobs publish failure before the exception is logged, so their waiters finish.)
 void run_guarded(std::function<void()>& fn) {
     try {
         fn();
@@ -38,6 +38,20 @@ void run_guarded(std::function<void()>& fn) {
         static std::atomic<int> logged;
         if (logged++ < 20) logf("vk: a background job failed (not a std::exception)");
     }
+}
+
+// Wrap before queueing: shared workers, the serial worker and jobs_wait's stolen jobs all run the same recovery.
+// The resource owns its failure representation (failed program, null pipeline, completed compute state).
+std::function<void()> with_failure(std::function<void()> fn, std::function<void()> on_failure) {
+    if (!on_failure) return fn;
+    return [fn = std::move(fn), on_failure = std::move(on_failure)] {
+        try {
+            fn();
+        } catch (...) {
+            on_failure();
+            throw;   // run_guarded still logs the original exception
+        }
+    };
 }
 
 void worker() {
@@ -59,7 +73,10 @@ void worker() {
 }
 
 void start() {
-    const unsigned n = std::clamp(std::thread::hardware_concurrency() / 3, 2u, 4u);
+    // (hookshot: with 16 hardware threads or more, 6 workers; RX_VK_WORKERS=<n>: n, 1 to 16)
+    const unsigned hw = std::thread::hardware_concurrency();
+    unsigned n = hw >= 16 ? 6u : std::clamp(hw / 3, 2u, 4u);
+    if (const char* e = getenv("RX_VK_WORKERS")) n = (unsigned)std::clamp(atoi(e), 1, 16);
     for (unsigned i = 0; i < n; i++) std::thread(worker).detach();
     started = true;
     logf("vk: %u background workers (shader translation, pipelines)", n);
@@ -67,7 +84,8 @@ void start() {
 
 } // namespace
 
-void jobs_push(std::function<void()> fn, bool urgent, const std::atomic<bool>* flag) {
+void jobs_push(std::function<void()> fn, bool urgent, const std::atomic<bool>* flag, std::function<void()> on_failure) {
+    fn = with_failure(std::move(fn), std::move(on_failure));
     std::lock_guard lk(mu);
     if (!started) start();
     pending++;
@@ -77,7 +95,8 @@ void jobs_push(std::function<void()> fn, bool urgent, const std::atomic<bool>* f
 }
 // (issue 496) Intel A750: four of the game's big compute pipelines built at once by Intel's compiler (up to 58 s each) froze
 // the whole PC. One thread builds them one at a time there, below normal priority, beside the shared workers
-void jobs_push_serial(std::function<void()> fn) {
+void jobs_push_serial(std::function<void()> fn, std::function<void()> on_failure) {
+    fn = with_failure(std::move(fn), std::move(on_failure));
     static std::mutex smu;
     static std::condition_variable scv;
     static std::deque<std::function<void()>> sq;
@@ -129,6 +148,13 @@ void jobs_wait(const std::atomic<bool>& flag) {
                 break;
             }
     done_cv.wait(lk, [&] { return flag.load(std::memory_order_acquire); });
+}
+bool jobs_wait_for(const std::atomic<bool>& flag, double ms) {
+    if (flag.load(std::memory_order_acquire)) return true;
+    if (ms <= 0) return false;
+    std::unique_lock lk(mu);
+    return done_cv.wait_for(lk, std::chrono::duration<double, std::milli>(ms),
+                            [&] { return flag.load(std::memory_order_acquire); });
 }
 int jobs_pending() {
     return pending.load();

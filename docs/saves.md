@@ -27,7 +27,7 @@ Only the folder they are in differs.
 | Program | Linux | Windows | How sure |
 |---|---|---|---|
 | Hookshot | `~/.local/share/hookshot/save/<user id>/` | `<game folder>\user\save\<user id>\` | Hookshot's source; Linux tested |
-| [Lichii](https://github.com/zortos293/Lichii) | `~/.local/share/eden/` + Eden's save path below | `%APPDATA%\eden\` + Eden's save path | Lichii's source; Linux tested, Windows not |
+| [Lichii](https://github.com/zortos293/Lichii) | `~/.local/share/lichii/` + Eden's save path below (before build 150: `~/.local/share/eden/`) | `%APPDATA%\lichii\` + Eden's save path (before build 150: `%APPDATA%\eden\`) | Lichii's source; the older folder tested on Linux, the new one and Windows not |
 | [Frizti (Fritchii)](https://github.com/Frizti/Lichii), a Lichii fork | (Windows only) | `%APPDATA%\eden\` + Eden's save path | its source (`fritchii-v5.5`); not tried |
 | [Orchid](https://github.com/MythosOfs/Orchid) | `~/.local/share/eden/` + Eden's save path | `%APPDATA%\eden\` + Eden's save path | its source; not tried |
 | [PokeDinner](https://git.eden-emu.dev/Franseven/PokeDinner-a-Eglantine-Fork) | `~/.local/share/eden/` + Eden's save path | `%APPDATA%\eden\` + Eden's save path | its source; not tried |
@@ -38,8 +38,10 @@ Eden's save path, under that data folder: `nand/user/save/0000000000000000/<prof
 
 - `0400486024DEC000` is the game's title id. Eden's `<profile id>` is the Switch user profile you play with;
   Hookshot's `<user id>` and NX2navi's `<account>` are one folder with a 32-character hex name.
-- **Lichii, Frizti, Orchid and PokeDinner share one folder**, Eden's (`eden`): a save there is the same save in all of
-  them. Eglantine has its own (`eglantine`).
+- **Frizti, Orchid and PokeDinner share one folder**, Eden's (`eden`): a save there is the same save in all of
+  them. Eglantine has its own (`eglantine`), and so has Lichii (`lichii`) since its build 150 (2026-11-10), which can
+  import Eden's data into it. A Lichii from before that build shares Eden's folder: the script looks in `lichii` first
+  and uses `eden` when there is no save in it.
 - The emulators use a `user` folder beside the program (Linux: in the folder you start it from) instead of the paths
   above when that folder exists (their "portable" mode). Point the script at it with `--from`/`--to`.
 - Newer Eden code also reads a save from `nand/user/save/account/<profile>/0400486024DEC000/0/` when that folder
@@ -92,6 +94,33 @@ The script refuses to run while it sees Hookshot or any of the programs above ru
 copied to `oot-save-backups/<import or export>-<name>-<date>-<time>/` first: in `~/.local/share` on Linux, in
 `%LOCALAPPDATA%\Hookshot` on Windows. To undo a copy, put the backup's contents back.
 
+## Reopen a saved slot as a checkpoint
+
+Use **System → Save** in OoT, then close the game. Run these commands from the
+Hookshot source checkout with the path to your installed game folder:
+
+```powershell
+python -I scripts/oot_checkpoints.py --game "F:\Games\Hookshot" capture --out quicksave.hsc
+python -I scripts/oot_checkpoints.py --game "F:\Games\Hookshot" resume quicksave.hsc --new-user "F:\Games\Hookshot Checkpoint Run"
+```
+
+Choose **Continue** to play the restored slot. Each resume creates a new save
+folder. Use a fresh path for `--new-user` on subsequent runs. Your ordinary
+launch opens your regular playthrough, and the checkpoint file can open another
+copy of the earlier save.
+
+Capture chooses the newest complete slot in a single profile. Run `slots` with
+the same `--game` argument to see the profiles and slots, then use `capture
+--profile <id> --slot <number>` to choose a specific save. For a game started with
+`--user`, pass that folder to `slots` or `capture` as well. Use `--exefs` before
+the subcommand if the unpacked ExeFS is outside the builder's game folder.
+
+The checkpoint stores native progress, the slot's caption, account data, and
+game options. Resume checks the game build, loaded image, mods, profile and slot,
+then stages the files for OoT's own loader. It uses the location and progress
+recorded by the game's save. Live quicksave and exact restoration require
+further runtime integration. Keep `.hsc` files local with your game saves.
+
 ## Copy by hand
 
 Close both programs, then copy the **contents** of the folder you are leaving into the folder you are going to (see
@@ -99,6 +128,11 @@ the table above). Keep a copy of the target first. Delete the target's old `slot
 that only exists on that side does not stay mixed in with the new save.
 
 ## Before you copy
+
+Copies stage the incoming save on the destination volume before replacing any slot. A failed copy leaves the
+destination intact; a failed rename attempts to restore every old entry. If a locked file also prevents rollback,
+the error names the retained old-entry folder and backup for recovery. This does not claim atomic recovery from a
+power loss between individual renames. No real save is used by the Windows/Linux transaction regression tests.
 
 - **Close both programs first.** A game that is running can write its save again on exit and undo the copy.
 - **Never run two of them on the same save at the same time.** Pointing two at one folder with a symlink may work,

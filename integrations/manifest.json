@@ -1,0 +1,29 @@
+{
+  "schema": 1,
+  "companions": {
+    "ootrr": {
+      "repository": "https://github.com/Mozencaz/OotrR",
+      "commit": "fdc2b2f26ba146b60f565aa83892ccd8bb25acdc",
+      "license": "MIT",
+      "patches": ["patches/ootrr-isolation.patch"]
+    },
+    "oot-coop": {
+      "repository": "https://github.com/daurosk/oot-remake-multiplayer",
+      "commit": "f5e4ca3b407197349af3045abff4bb7475ac2fd8",
+      "license": "GPL-3.0",
+      "patches": []
+    },
+    "randomizer": {
+      "repository": "https://github.com/KAMOX06/hookshot-randomized",
+      "commit": "91f301987e8f67b5239bb22429137077a1e330d0",
+      "license": "MIT",
+      "patches": []
+    },
+    "tracker": {
+      "repository": "https://github.com/LucieTheFool/boomerang-tracker",
+      "commit": "0fb33437e620adb3d3634f28ed7650c20bb2361c",
+      "license": "MIT",
+      "patches": ["patches/tracker-build.patch"]
+    }
+  }
+}

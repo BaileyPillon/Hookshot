@@ -1,5 +1,6 @@
 /* All APIs are mocks: no window, screen saver, security or power setting is accessed. */
 #include <stdint.h>
+static void hos_input_clear_toggles(void) {}
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -19,7 +20,7 @@ typedef intptr_t LRESULT;
 enum {
     WM_TIMER = 0x113, WM_SYSCOMMAND = 0x112, WM_INPUT = 0xff, WM_LBUTTONDOWN = 0x201,
     WM_KEYDOWN = 0x100, WM_SYSKEYDOWN = 0x104, WM_SYSCHAR = 0x106, WM_APP = 0x8000,
-    WM_DPICHANGED = 0x2e0, WM_KILLFOCUS = 8, WM_CANCELMODE = 0x1f, WM_SETCURSOR = 0x20,
+    WM_DPICHANGED = 0x2e0, WM_SETFOCUS = 7, WM_KILLFOCUS = 8, WM_CANCELMODE = 0x1f, WM_SETCURSOR = 0x20,
     WM_MOVE = 3, WM_SIZE = 5, WM_PAINT = 0xf, WM_ERASEBKGND = 0x14, WM_CLOSE = 0x10,
     VK_ESCAPE = 0x1b, VK_F11 = 0x7a, VK_RETURN = 0xd, HTCLIENT = 1,
     VK_SHIFT = 0x10, VK_CONTROL = 0x11, VK_MENU = 0x12,
@@ -38,7 +39,8 @@ typedef struct {
 #define CHECK(name, condition) do { if (!(condition)) { \
     fprintf(stderr, "FAIL: %s (line %d)\n", name, __LINE__); exit(1); } } while (0)
 static HWND game = (HWND)(uintptr_t)1, foreground;
-static int renderer, fullscreen, mouse_captured;
+static int renderer, fullscreen, mouse_captured, pointer_tracking;
+static int esc_had_capture __attribute__((unused));   /* (Esc's note: host/display.c sets it here) */
 static volatile LONG mouse_dx, mouse_dy;
 static int iconic, query_ok, query_writes, policy_secure, query_calls, forwarded, cases;
 static UINT forwarded_msg;
@@ -103,32 +105,45 @@ enum {
 };
 typedef struct { UINT cbSize; UINT dwFlags; HWND hwndTrack; UINT dwHoverTime; } TRACKMOUSEEVENT;
 #define GET_WHEEL_DELTA_WPARAM(v) ((short)HIWORD(v))
-static volatile LONG ptr_x, ptr_y, ptr_w, ptr_h, ptr_in, ptr_wheel;
+static int pointer, game_pointer;
+static void hos_pointer_reset(int *p) { (void)p; unexpected(); }
+static int pointer_updates;
+static void pointer_update(HWND w, uint32_t pressed, int wheel) {
+    CHECK("timer refresh targets game without input edges", w == game && pressed == 0 && wheel == 0);
+    pointer_updates++;
+}
 static int menu_open;
 static BOOL TrackMouseEvent(TRACKMOUSEEVENT *t) { (void)t; unexpected(); return FALSE; }
 static HWND GetCapture(void) { unexpected(); return NULL; }
 static BOOL ReleaseCapture(void) { unexpected(); return FALSE; }
 static void menu_press(HWND w, LPARAM lp, LONG bit) { (void)w; (void)lp; (void)bit; unexpected(); }
-static void menu_mouse(HWND w, int open) { (void)w; (void)open; unexpected(); }
+static void menu_mouse(HWND w, int open, int opened_by_escape) { (void)w; (void)open; (void)opened_by_escape; unexpected(); }
 /* (the game's own menus take the mouse while one of them is shown (host/oot_menu.c); never here either) */
 typedef int64_t LONG64;
 typedef struct { LONG x, y; } POINT;
+enum { WM_CHAR = 0x102 };
+static int coop_mouse(HWND w, POINT p, int event) { (void)w; (void)p; (void)event; return 0; }
+int hos_coop_char(unsigned ch) { (void)ch; return 0; }
+int hos_coop_key(unsigned key, int repeat) { (void)key; (void)repeat; return 0; }
+int hos_coop_keys_taken(void) { return 0; }
+static BOOL ScreenToClient(HWND w, POINT *p) { (void)w; (void)p; unexpected(); return FALSE; }
 static int game_menu_open;
 static volatile LONG64 game_menu_seen_ns;
-static volatile LONG gm_wheel, play_wheel;
+static volatile LONG play_wheel;
 static volatile LONG64 play_wheel_ns;
-static LONG gm_mx, gm_my;
 static LONG64 InterlockedCompareExchange64(volatile LONG64 *target, LONG64 value, LONG64 compare) {
     const LONG64 was = *target;
     if (was == compare) *target = value;
     return was;
 }
 static int64_t hos_now_ns(void) { return 0; }
-static void gm_mouse_used(void) { unexpected(); }
-static int gm_cursor_shown(void) { unexpected(); return 1; }
+static void gm_mouse_moved(HWND w) { (void)w; unexpected(); }
+/* (the timer asks in play too: a cursor shown is left alone, one the pads or keys hid is turned off) */
+static int cursor_shown = 1, cursor_offs;
+static int gm_cursor_shown(void) { return cursor_shown; }
 static void game_menu_press(LPARAM lp, LONG bit) { (void)lp; (void)bit; unexpected(); }
 static void menus_mouse(HWND w, int insert_open, int game_open) { (void)w; (void)insert_open; (void)game_open; unexpected(); }
-static void gm_cursor_off(HWND w) { (void)w; unexpected(); }
+static void gm_cursor_off(HWND w) { CHECK("the cursor is turned off over the game's window", w == game); cursor_offs++; }
 
 /* ACTUAL_WNDPROC */
 
@@ -161,7 +176,7 @@ int main(void) {
     reset(); foreground = NULL; call("unknown foreground is forwarded", WM_SYSCOMMAND, SC_SCREENSAVE, 0, 0);
     reset(); iconic = 1; call("minimized game is forwarded", WM_SYSCOMMAND, SC_SCREENSAVE, 0, 0);
     /* (#1532) the display kept on: in front, at most once in 30 s, not minimized, not in the background, no ES_CONTINUOUS */
-    reset(); awake_calls = 0;
+    reset(); awake_calls = 0; pointer_updates = 0;
     CHECK("timer handled", wndproc(game, WM_TIMER, 1, 0) == 0);
     CHECK("foreground timer keeps the display on", awake_calls == 1 && awake_flags == (ES_DISPLAY_REQUIRED | ES_SYSTEM_REQUIRED));
     wndproc(game, WM_TIMER, 1, 0);
@@ -172,6 +187,19 @@ int main(void) {
     CHECK("not in the background", awake_calls == 1);
     foreground = game; wndproc(game, WM_TIMER, 1, 0);
     CHECK("again after 30 s in front", awake_calls == 2);
+    CHECK("every timer still refreshes pointer state", pointer_updates == 5);
+    /* the cursor in play: shown, the timer leaves it; hidden by the pads or keys, the timer turns it off, with the game
+       in front and the Insert menu closed only */
+    CHECK("a cursor shown is left alone", cursor_offs == 0);
+    reset(); cursor_shown = 0; wndproc(game, WM_TIMER, 1, 0);
+    CHECK("hidden by the pads or keys: turned off at the timer", cursor_offs == 1);
+    foreground = (HWND)(uintptr_t)2; wndproc(game, WM_TIMER, 1, 0);
+    CHECK("not with another window in front", cursor_offs == 1);
+    foreground = game; menu_open = 1; wndproc(game, WM_TIMER, 1, 0);
+    CHECK("not under the Insert menu", cursor_offs == 1);
+    menu_open = 0; wndproc(game, WM_TIMER, 1, 0);
+    CHECK("again once the Insert menu is closed", cursor_offs == 2);
+    cursor_shown = 1; cases += 5;
     reset(); call("close command is forwarded", WM_SYSCOMMAND, SC_CLOSE, 0, 0);
     reset(); call("monitor power command is forwarded", WM_SYSCOMMAND, SC_MONITORPOWER, 0, 0);
     reset(); call("maximize command is forwarded", WM_SYSCOMMAND, SC_MAXIMIZE, 0, 0);

@@ -49,6 +49,10 @@ bool begin(uint32_t, uint32_t) { calls += "b"; return can_draw; }
 void idle() { calls += "i"; }
 void record(VkCommandBuffer cmd, uint32_t index, uint32_t w, uint32_t h) { CHECK(cmd == 1 && index == 2 && w == 640 && h == 360); calls += "r"; }
 }
+namespace mkwvk::rec {   // (RX_VK_RECORDER: the boundary before each Dear ImGui recording, logged as "d")
+enum Bound { B_DIRECT };
+void boundary(Bound) { calls += "d"; }
+}
 ui::Ctx ui_ctx(uint32_t, uint32_t) { return {}; }
 void prebake(const ui::Ctx&) { calls += "p"; }
 bool resized = false;
@@ -56,29 +60,36 @@ bool prebake_needed(uint32_t, uint32_t) { return resized; }
 void draw_startup(ui::Ctx&) { calls += "s"; }
 void draw_menu(ui::Ctx&) { calls += "m"; }
 void draw_fps(ui::Ctx&, bool under_banner) { calls += under_banner ? "F" : "f"; }
+namespace coop {
+bool visible = false;
+bool wanted() { return visible; }
+void draw(uint32_t w, uint32_t h) { CHECK(w == 640 && h == 360); calls += "c"; }
+}
 ''' + fn + r'''
 int main() {
-    for (bool startup : {false, true}) for (bool fps : {false, true}) for (bool menu : {false, true}) for (bool can : {true, false}) {
+    for (bool multiplayer : {false, true}) for (bool startup : {false, true}) for (bool fps : {false, true}) for (bool menu : {false, true}) for (bool can : {true, false}) {
+        coop::visible = multiplayer;
         opts.show_fps = fps;
         open_now = menu;
         startup_on = startup;
         can_draw = can;
         calls.clear();
         menu_record(1, 2, 640, 360);
-        if (!startup && !fps && !menu) {   // (nothing shows: no ImGui frame at all, only the reaping; after a resize, one bake)
+        if (!startup && !fps && !menu && !multiplayer) {   // (nothing shows: no ImGui frame at all, only the reaping; after a resize, one bake)
             CHECK(calls == "i");
             calls.clear(), resized = true;
             menu_record(1, 2, 640, 360);
-            CHECK(calls == (can ? "bpr" : "bi"));
+            CHECK(calls == (can ? "bpdr" : "bi"));
             resized = false;
             continue;
         }
         if (!can) { CHECK(calls == "b"); continue; }                           // (no ImGui here: nothing recorded)
         std::string want = "bp";
         if (startup) want += "s";
+        if (multiplayer && !startup) want += "c";
         if (menu) want += "m";
         if (fps && !startup) want += menu ? "F" : "f";
-        want += "r";
+        want += "dr";   // (the recorder boundary right before the recording)
         CHECK(calls == want);
     }
     std::printf("PASS: one ImGui frame and recording for whatever shows, in order, nothing while nothing shows\n");

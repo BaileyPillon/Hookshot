@@ -1,2 +1,5 @@
 * text=auto eol=lf
 *.bat text eol=crlf
+*.xz binary
+# Unified patches need a single-space prefix on empty context lines.
+integrations/patches/*.patch whitespace=-blank-at-eol

@@ -10,6 +10,7 @@
    While the Insert menu is open the mouse is free (the cursor shown, for the menu's clicks: hos_mouse_pointer) and
    the game gets none of it; the capture it had comes back when the menu closes. */
 #include "../hos.h"
+void hos_input_clear_toggles(void);
 #include "../hos_sdl.h"
 
 /* (the window's app id: the applications menu's entry names it as its StartupWMClass, builder/linux/hookshot_builder.py) */
@@ -19,6 +20,12 @@
 #include <string.h>
 #include <windows.h>
 #include "../../gpu/vk/vk_api.h"
+#include "../display_pointer.h"
+#include <math.h>
+#include <limits.h>
+#ifndef HOOKSHOT_ENV_H   /* (env_on: the switches' one rule) */
+#include "../../gpu/vk/compat/hookshot_env.h"
+#endif
 
 int rx_start(void *hwnd);
 void rx_resize(int width, int height);
@@ -45,28 +52,73 @@ void hos_mouse_give_back(int32_t dx, int32_t dy) {
 }
 
 /* ---- the free mouse, for the Insert menu (gpu/vk/vk_api.h MkwVkPointer): set on the main thread, read on the renderer's ---- */
-static volatile LONG ptr_x, ptr_y, ptr_in, ptr_held, ptr_pressed, ptr_wheel;   /* (x, y in window units; wheel in 1/120 notches) */
-static volatile int menu_open;   /* (WM_APP + 8: the menu's state, as the window last heard it) */
+static HosPointer pointer = HOS_POINTER_INIT;
+static int ptr_in;
+static uint32_t ptr_held;
+static int menu_open;   /* window-thread only */
 static void *window;
-int hos_mouse_pointer(MkwVkPointer *out) {
-    memset(out, 0, sizeof *out);
-    if (!window || mouse_captured) return 0;
+int hos_mouse_pointer(MkwVkPointer *out) { return hos_pointer_take(&pointer, out); }
+
+/* SDL's window/mouse queries belong on the main thread, never on the renderer's pointer callback. */
+static void pointer_publish_at(float x, float y, uint32_t pressed, int wheel) {
     int ww = 0, wh = 0, pw = 0, ph = 0;
-    hos_sdl_window_size(window, &ww, &wh);   /* (SDL's position is in the window's units: scaled to its pixels) */
+    hos_sdl_window_size(window, &ww, &wh);
     hos_sdl_pixel_size(window, &pw, &ph);
-    if (ww <= 0 || wh <= 0 || pw <= 0 || ph <= 0) return 0;
-    out->x = (int32_t)((int64_t)ptr_x * pw / ww), out->y = (int32_t)((int64_t)ptr_y * ph / wh);
-    out->width = pw, out->height = ph;
-    out->held = (uint32_t)ptr_held;
-    out->pressed = (uint32_t)InterlockedExchange(&ptr_pressed, 0);
-    const LONG wheel = InterlockedExchange(&ptr_wheel, 0);
-    out->wheel = wheel / 120;
-    if (wheel % 120) InterlockedExchangeAdd(&ptr_wheel, wheel % 120);   /* (a part of a notch: kept for the next) */
-    return ptr_in && hos_posix_window[0];
+    MkwVkPointer sample = {0};
+    sample.width = pw, sample.height = ph;
+    const double px = ww > 0 ? floor((double)x * pw / ww) : 0;
+    const double py = wh > 0 ? floor((double)y * ph / wh) : 0;
+    const int valid = ww > 0 && wh > 0 && isfinite(px) && isfinite(py) &&
+                      px >= INT32_MIN && px <= INT32_MAX && py >= INT32_MIN && py <= INT32_MAX;
+    if (valid) sample.x = (int32_t)px, sample.y = (int32_t)py;
+    sample.held = ptr_held, sample.pressed = pressed, sample.wheel = wheel;
+    hos_pointer_publish(&pointer, sample, valid && ptr_in && !mouse_captured && hos_posix_window[0]);
+}
+static void pointer_update(uint32_t pressed, int wheel) {
+    float x = 0, y = 0;
+    hos_sdl_mouse_position(&x, &y);
+    pointer_publish_at(x, y, pressed, wheel);
 }
 static uint32_t sdl_button_bit(int b) { return b == 1 ? HOS_MOUSE_LEFT : b == 3 ? HOS_MOUSE_RIGHT : b == 2 ? HOS_MOUSE_MIDDLE : 0; }
 
 /* ---- keys: SDL's scancodes (USB HID usages) as Windows' virtual keys ---- */
+/* (oot-remake-multiplayer) co-op's chat box, cheats panel and their mouse first (host/coop_bridge.c), as host/display.c
+   does on Windows: a key press by virtual-key code, typed text as code points, the cursor as a fraction of the window */
+int hos_coop_key(unsigned vk, int repeat);
+int hos_coop_char(unsigned ch);
+int hos_coop_keys_taken(void);
+int hos_coop_mouse(float fx, float fy, int event);
+static unsigned coop_vk(int sc) {   /* (the keys the chat box and the panel use, as keys_update maps them) */
+    if (sc >= 4 && sc <= 29) return 'A' + (unsigned)(sc - 4);
+    if (sc >= 30 && sc <= 38) return '1' + (unsigned)(sc - 30);
+    if (sc >= 58 && sc <= 69) return VK_F1 + (unsigned)(sc - 58);
+    switch (sc) {
+    case 39: return '0';
+    case 40: case 88: return VK_RETURN;
+    case 41: return VK_ESCAPE;
+    case 42: return VK_BACK;
+    case 43: return VK_TAB;
+    case 44: return VK_SPACE;
+    case 74: return VK_HOME;
+    case 76: return VK_DELETE;
+    case 77: return VK_END;
+    case 79: return VK_RIGHT;
+    case 80: return VK_LEFT;
+    case 81: return VK_DOWN;
+    case 82: return VK_UP;
+    }
+    return 0;
+}
+static void coop_text(const char *s) {   /* (UTF-8 to code points) */
+    for (const unsigned char *t = (const unsigned char *)s; *t;) {
+        unsigned cp = *t++;
+        int more = cp >= 0xF0 ? 3 : cp >= 0xE0 ? 2 : cp >= 0xC0 ? 1 : 0;
+        cp &= more == 3 ? 0x07 : more == 2 ? 0x0F : more == 1 ? 0x1F : 0x7F;
+        for (; more > 0 && (*t & 0xC0) == 0x80; more--) cp = cp << 6 | (*t++ & 0x3F);
+        hos_coop_char(more ? 0xFFFD : cp);
+    }
+}
+
 static void keys_update(void) {
     int n = 0;
     const uint8_t *k = hos_sdl_keys(&n);
@@ -100,22 +152,35 @@ static void keys_update(void) {
 }
 
 /* ---- the window ---- */
+static int coop_mouse(float x, float y, int event) {   /* (oot-remake-multiplayer: co-op's panel; 1 = taken) */
+    int w = 0, h = 0;
+    if (menu_open || !window) return 0;
+    hos_sdl_window_size(window, &w, &h);
+    return w > 0 && h > 0 ? hos_coop_mouse(x / (float)w, y / (float)h, event) : 0;
+}
 static volatile int renderer;   /* the renderer presents into the window */
 static HANDLE renderer_up;   /* (set once rx_start has returned, ready or not: hos_renderer_wait) */
 static int fullscreen;
 
 static int create_surface(void *w, void *instance, void *surface) { return hos_sdl_vulkan_surface(w, instance, surface); }
-static void drawable_size(void *w, int *width, int *height) { hos_sdl_pixel_size(w, width, height); }
+static void drawable_size(void *w, int *width, int *height) {
+    (void)w;
+    hos_pointer_size(&pointer, width, height);
+}
 /* (SDL's display calls belong on this thread: the loop asks every second, the renderer reads what it found) */
 static volatile int refresh_now;
 static int refresh_mhz(void *w) { (void)w; return __atomic_load_n(&refresh_now, __ATOMIC_RELAXED); }
 static MkwVkWindow vk_window = {MKWVK_WINDOW_VERSION, create_surface, drawable_size, NULL, refresh_mhz};
 
+/* Esc let the captured mouse go just before it opened the Insert menu (Menu shortcut "Insert, F1 or Esc"):
+   the capture that comes back when the menu closes. Spent by the next capture or menu */
+static int esc_had_capture;
 static void mouse_capture(int on) {
     if (on == (int)mouse_captured) return;
     mouse_captured = on;
     InterlockedExchange(&mouse_dx, 0);
     InterlockedExchange(&mouse_dy, 0);
+    if (on) esc_had_capture = 0;
     hos_sdl_relative_mouse(window, on);
 }
 static void set_fullscreen(int on) {
@@ -133,7 +198,7 @@ static DWORD WINAPI renderer_main(void *p) {
     renderer = ok;
     if (ok) {   /* (a size change while it started) */
         int w = 0, h = 0;
-        hos_sdl_pixel_size(window, &w, &h);
+        hos_pointer_size(&pointer, &w, &h);
         if (w > 0 && h > 0) rx_resize(w, h);
     }
     SetEvent(renderer_up);
@@ -156,21 +221,27 @@ static volatile int close_asked;             /* (the Insert menu's Quit: likewis
 /* PostMessageA to the window (host/posix/win32_posix.c): WM_APP + 7, the Insert menu's Fullscreen row, WM_APP + 8 the
    menu opened or closed, WM_APP + 9 its Restart now, WM_CLOSE its Quit (host/display.c's) */
 __attribute__((visibility("default"))) void hos_posix_post_message(uint32_t msg, uintptr_t wp, intptr_t lp) {
-    (void)lp;
     if (msg == WM_APP + 7) __atomic_store_n(&fullscreen_asked, wp ? 1 : 0, __ATOMIC_RELEASE);
-    if (msg == WM_APP + 8) __atomic_store_n(&menu_asked, wp ? 1 : 0, __ATOMIC_RELEASE);
+    if (msg == WM_APP + 8) {
+        /* Keep the opening reason in the same atomic as the requested state. */
+        __atomic_store_n(&menu_asked, !wp ? 0 : 1 + (lp != 0), __ATOMIC_RELEASE);
+    }
     if (msg == WM_APP + 9) __atomic_store_n(&restart_asked, 1, __ATOMIC_RELEASE);
     if (msg == WM_CLOSE) __atomic_store_n(&close_asked, 1, __ATOMIC_RELEASE);
 }
 /* the menu opened: the mouse let go (its capture kept for later); closed: the capture back, if the window still has the focus */
 static int captured_before_menu;
-static void menu_mouse(int open) {
+static void menu_mouse(int request) {
+    const int open = request != 0;
     if (open == menu_open) return;
     menu_open = open;
     if (open) {
-        captured_before_menu = (int)mouse_captured;
+        hos_input_clear_toggles();
+        captured_before_menu = (int)mouse_captured || (request == 2 && esc_had_capture);   /* (opened by Esc, which let it go) */
+        esc_had_capture = 0;
         mouse_capture(0);
-        InterlockedExchange(&ptr_pressed, 0), InterlockedExchange(&ptr_wheel, 0);
+        hos_pointer_reset(&pointer);
+        pointer_update(0, 0);
     } else {
         if (captured_before_menu && hos_posix_window[0]) mouse_capture(1);
         captured_before_menu = 0;
@@ -181,14 +252,21 @@ int hos_display_owns_sdl(void) { return sdl_ready; }   /* (controllers stay on t
 
 /* main(), before the game: SDL's video on this, the main, thread; the screen's size for GetSystemMetrics.
    Returns 1 when ready, 0 for explicit headless, -1 for startup failure. */
+static const char *window_title(const char *fallback) {
+    const char *e = getenv("HOS_WINDOW_TITLE");
+    return (e && e[0]) ? e : fallback;
+}
+
 int hos_display_init(void) {
-    if (getenv("HOS_HEADLESS")) return 0;
+    if (env_on("HOS_HEADLESS")) return 0;
     if (!hos_sdl_load()) {
         hos_log("display: no SDL: no window");
         fprintf(stderr, "display: no SDL: no window\n");
         return -1;
     }
-    hos_sdl_identity("Hookshot", HOS_APP_ID);
+    const char *env_class = getenv("HOS_WM_CLASS");
+    const char *app_id = (env_class && env_class[0]) ? env_class : HOS_APP_ID;
+    hos_sdl_identity(window_title("Hookshot"), app_id);
     hos_sdl_hint("SDL_VIDEO_X11_NET_WM_BYPASS_COMPOSITOR", "0");
     hos_sdl_hint("SDL_JOYSTICK_ALLOW_BACKGROUND_EVENTS", "1");
     /* (bundled SDL tries x11 before wayland. NVIDIA's X11 surface has no mailbox, and an immediate
@@ -198,6 +276,12 @@ int hos_display_init(void) {
     const int gamescope = desktop && strstr(desktop, "gamescope");
     if (!getenv("SDL_VIDEODRIVER") && !getenv("SDL_VIDEO_DRIVER") && !gamescope)
         hos_sdl_hint(hos_sdl_load() == 3 ? "SDL_VIDEO_DRIVER" : "SDL_VIDEODRIVER", "wayland,x11");
+    /* (SDL2 on Wayland: libdecor from the start. SDL2 2.32 asks for the compositor's decorations before the window's first
+       configure, and a compositor that answers "the client draws them" (COSMIC) has it unmap and map the window again
+       with libdecor inside that wait, which then waits forever on a field the switch cleared: no window, no renderer
+       (#992). libdecor takes the compositor's decorations itself where they are offered; with no libdecor SDL keeps
+       its own. SDL3 waits on the window's state and is left alone; SDL_VIDEO_WAYLAND_PREFER_LIBDECOR still wins) */
+    if (hos_sdl_load() == 2) hos_sdl_hint("SDL_VIDEO_WAYLAND_PREFER_LIBDECOR", "1");
     if (!hos_sdl_init(HOS_SDL_VIDEO | HOS_SDL_EVENTS)) {
         hos_log("display: SDL_Init: %s: no window", hos_sdl_error());
         fprintf(stderr, "display: SDL_Init: %s: no window\n", hos_sdl_error());
@@ -211,7 +295,7 @@ int hos_display_init(void) {
 
 /* the game's thread, when NVN is up (hos_main.c): the window is made on the main thread, which waits for this */
 void hos_display_start(void) {
-    if (getenv("HOS_HEADLESS") || !sdl_ready) {   /* no window: the renderer still draws, offscreen (screenshots) */
+    if (env_on("HOS_HEADLESS") || !sdl_ready) {   /* no window: the renderer still draws, offscreen (screenshots) */
         rx_start(NULL);
         return;
     }
@@ -233,7 +317,7 @@ void hos_display_loop(void) {
         int w = 0, h = 0;
         if (sscanf(getenv("HOS_WINDOW_SIZE"), "%dx%d", &w, &h) == 2 && w >= 64 && h >= 64) win_w = w, win_h = h;
     }
-    window = hos_sdl_window(HOS_GAME_TITLE, win_w, win_h);
+    window = hos_sdl_window(window_title(HOS_GAME_TITLE), win_w, win_h);
     if (!window) {
         hos_log("display: SDL_CreateWindow: %s: no window", hos_sdl_error());
         fprintf(stderr, "display: SDL_CreateWindow: %s: no window\n", hos_sdl_error());
@@ -241,6 +325,7 @@ void hos_display_loop(void) {
         ExitProcess(1);
     }
     vk_window.window = window;
+    hos_sdl_text_input(window);   /* (oot-remake-multiplayer: co-op's chat box gets typed text) */
     hos_posix_window[0] = 1;
     {   /* the window's icon: hookshot.png beside the game (make_game.py puts it there), for X11 and the compositors that
            take one from the window; the others find it through the menu entry */
@@ -252,6 +337,7 @@ void hos_display_loop(void) {
     }
     if (getenv("HOS_FULLSCREEN") && atoi(getenv("HOS_FULLSCREEN"))) set_fullscreen(1);
     __atomic_store_n(&refresh_now, hos_sdl_refresh_mhz(window), __ATOMIC_RELAXED);
+    pointer_update(0, 0);
     CloseHandle(CreateThread(NULL, 0, renderer_main, NULL, 0, NULL));
     DWORD refresh_asked = GetTickCount();
     for (;;) {
@@ -268,9 +354,10 @@ void hos_display_loop(void) {
                     rx_close_asked();   /* (a start still preparing the shaders keeps what it made) */
                     hos_window_closed_exit();
                 case HOS_SDL_EV_RESIZED:
+                    pointer_update(0, 0);   /* publish pixels before waking the renderer's size consumer */
                     if (renderer) {
                         int w = 0, h = 0;
-                        hos_sdl_pixel_size(window, &w, &h);
+                        hos_pointer_size(&pointer, &w, &h);
                         rx_resize(w, h);
                     }
                     break;
@@ -278,7 +365,9 @@ void hos_display_loop(void) {
                     hos_posix_window[0] = 1;
                     break;
                 case HOS_SDL_EV_FOCUS_LOST:
+                    hos_input_clear_toggles();
                     hos_posix_window[0] = 0;
+                    esc_had_capture = 0;
                     mouse_capture(0);
                     ptr_in = 0, ptr_held = 0;
                     break;
@@ -293,26 +382,42 @@ void hos_display_loop(void) {
                     ptr_in = 1;
                     break;
                 case HOS_SDL_EV_KEY_DOWN: {
+                    const unsigned cvk = coop_vk(e.scancode);   /* (oot-remake-multiplayer: co-op's keys first) */
+                    if (cvk && hos_coop_key(cvk, e.repeat)) {
+                        if (mouse_captured && hos_coop_keys_taken()) mouse_capture(0);   /* (the cursor back, for clicks) */
+                        break;
+                    }
                     const int scancode = e.scancode, mod = e.mod;
-                    if (e.scancode == 41) mouse_capture(0);   /* Esc */
+                    if (e.scancode == 41) {   /* Esc (it may open the Insert menu too: the capture comes back) */
+                        if (!menu_open && mouse_captured) esc_had_capture = 1;
+                        mouse_capture(0);
+                    }
                     if (!e.repeat && ((scancode == 68 && !(mod & 0x0FC3)) || (scancode == 40 && (mod & 0x300)))) set_fullscreen(!fullscreen);   /* F11, Alt+Enter */
                     break;
                 }
                 case HOS_SDL_EV_MOUSE_DOWN:
-                    ptr_x = (LONG)e.x, ptr_y = (LONG)e.y, ptr_in = 1;
-                    InterlockedOr(&ptr_held, (LONG)sdl_button_bit(e.button));
-                    if (menu_open) InterlockedOr(&ptr_pressed, (LONG)sdl_button_bit(e.button));   /* (the menu's click) */
+                    ptr_in = 1;
+                    ptr_held |= sdl_button_bit(e.button);
+                    if (menu_open) pointer_publish_at(e.x, e.y, sdl_button_bit(e.button), 0);   /* (the menu's click) */
+                    else if (e.button == 1 && !mouse_captured && coop_mouse(e.x, e.y, 1)) {}   /* (taken by co-op's panel) */
                     else if (renderer && !mouse_captured) mouse_capture(1);
                     break;
                 case HOS_SDL_EV_MOUSE_UP:
-                    ptr_x = (LONG)e.x, ptr_y = (LONG)e.y;
-                    InterlockedAnd(&ptr_held, ~(LONG)sdl_button_bit(e.button));
+                    ptr_held &= ~sdl_button_bit(e.button);
                     break;
                 case HOS_SDL_EV_MOUSE_WHEEL:
-                    if (menu_open) InterlockedExchangeAdd(&ptr_wheel, (LONG)(e.wheel * 120));
+                    if (menu_open) pointer_update(0, (int)(e.wheel * 120));
+                    else if (!mouse_captured && e.wheel != 0) {   /* (oot-remake-multiplayer: co-op's panel) */
+                        float x = 0, y = 0;
+                        hos_sdl_mouse_position(&x, &y);
+                        coop_mouse(x, y, e.wheel > 0 ? 2 : 3);
+                    }
+                    break;
+                case HOS_SDL_EV_TEXT:   /* (oot-remake-multiplayer: typed text for co-op's chat box and panel) */
+                    coop_text(e.text);
                     break;
                 case HOS_SDL_EV_MOUSE_MOTION:
-                    if (!mouse_captured) ptr_x = (LONG)e.x, ptr_y = (LONG)e.y, ptr_in = 1;
+                    if (!mouse_captured) ptr_in = 1, coop_mouse(e.x, e.y, 0);   /* (co-op: the row under the cursor) */
                     if (mouse_captured) {   /* (SDL3's motion comes in fractions of a pixel: the remainders kept for the next) */
                         static float rx, ry;
                         rx += e.dx, ry += e.dy;
@@ -323,6 +428,7 @@ void hos_display_loop(void) {
                     }
                     break;
                 }
+                pointer_update(0, 0);
             } while (hos_sdl_poll_event(&e));
         }
         const int asked = __atomic_exchange_n(&fullscreen_asked, -1, __ATOMIC_ACQ_REL);
@@ -338,6 +444,7 @@ void hos_display_loop(void) {
             rx_close_asked();
             hos_window_closed_exit();
         }
+        pointer_update(0, 0);
         keys_update();
     }
 }

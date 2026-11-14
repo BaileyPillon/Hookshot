@@ -33,7 +33,7 @@ break. Claim in Discord #dev-work before you start.
 
 | | What |
 |---|---|
-| **Test on other hardware** | NVIDIA cards are the most tested; the README's [status table](readme.md#project-status) says what works where, and [tested configurations](docs/tested-configurations.md) lists the runs behind it (build, hardware, driver, where, fps). Reports from AMD and Intel cards, other NVIDIA drivers, other distributions and SteamOS are useful even when everything works: add a row there. |
+| **Test on other hardware** | NVIDIA cards are the most tested; the README's [status table](readme.md#project-status) says what works where, and [tested configurations](docs/tested-configurations.md) lists the runs behind it (build, hardware, driver, where, fps). Reports from AMD and Intel cards, other NVIDIA drivers, other distributions and SteamOS are useful even when everything works: add a row there. Pull requests that need a run on your hardware are queued as [test requests](docs/test-requests.md): pick one up, by hand or with an agent. |
 | **Play further** | The tested area is the start of the game. Reaching new areas, cutscenes, menus and items finds problems the developer has not seen. |
 | **Report what is broken** | Use the [issue forms](https://github.com/NotRexed/Hookshot/issues/new/choose): game problem, build problem or idea. Include the version, your hardware, where you were and `hookshot_log.txt`. |
 | **Send a fix** | Fork, fix, test, open a pull request. Small, focused changes are easiest to review and merge. |
@@ -94,6 +94,21 @@ scripts/linux/deps.sh       # LLVM, Python packages, FFmpeg with dav1d, SDL2, Vu
 scripts/linux/appimage.sh   # the AppImage, in build-linux/
 ```
 
+The scripts expect Ubuntu 22.04, the system CI builds the AppImage in: the AppImage carries that system's C library, so
+the game it builds runs on glibc 2.35 and newer. On another distribution, build it in a container with the same system
+(Docker or Podman, `DOCKER=podman`):
+
+```sh
+scripts/linux/docker.sh             # deps.sh, then appimage.sh, in scripts/linux/Dockerfile's Ubuntu 22.04
+scripts/linux/docker.sh shell       # a shell in that environment, with the checkout at /src
+```
+
+The AppImage lands in `build-linux/` as above. The container keeps its own `build-linux/docker-deps` and
+`build-linux/docker-vk-work`: parts built on the host link against its newer glibc and would not load on older systems.
+The Dockerfile's packages are the workflow's (`tests/test_linux_docker_packages.py` checks that they stay the same).
+Where SELinux is enforcing (Fedora, RHEL), the script runs the container with `--security-opt label=disable`: the
+checkout is not labelled for containers, and relabelling it with `:z` would change it on the host.
+
 The AppImage needs glibc 2.35 or newer and a Vulkan 1.3 driver with mesh shaders. `HOOKSHOT_JOBS` sets how many files
 compile at once. The README's [Linux section](readme.md#on-linux) has the details and the runtime paths.
 
@@ -105,16 +120,17 @@ builds with `scripts/ngx_sdk.py` (it prints NVIDIA's license notice and needs `-
 then build with `HOOKSHOT_NGX_SDK=<sdk folder>`:
 
 ```powershell
-python -I scripts/ngx_sdk.py --platform windows C:\path\ngx-sdk     # headers, nvsdk_ngx_s.lib, nvngx_dlss.dll
+python -I scripts/ngx_sdk.py --platform windows C:\path\ngx-sdk     # headers, nvsdk_ngx_s.lib, nvngx_dlss(g).dll
 $env:HOOKSHOT_NGX_SDK = "C:\path\ngx-sdk"
 python -I nx2/make_game.py --nup "C:\path\your-game.nup" --out "C:\Games\Hookshot-dlss"
 ```
 
 On Windows the llvm-mingw build links NVIDIA's static `nvsdk_ngx_s.lib` (built for Microsoft's static runtime) into
 `hookshot_vk.dll`, with `gpu/vk/vk_ngx_msvc_rt.cpp` and `host/mingw_msvc_shims.c` for what it needs of that runtime.
-`make_game.py` copies `nvngx_dlss.dll` into the game folder's `ngx` folder; never put NGX's core, `_nvngx.dll`, beside
-the game (it is the driver's). On Linux it is `--platform linux` (or `scripts/linux/ngx-sdk.sh`), with `libnvsdk_ngx.a`
-and `libnvidia-ngx-dlss.so`. A Windows game with DLSS can be built on Linux too, with `RX_TARGET=windows` as below.
+`make_game.py` copies `nvngx_dlss.dll` and DLSS Frame Generation's `nvngx_dlssg.dll` into the game folder's `ngx`
+folder; never put NGX's core, `_nvngx.dll`, beside the game (it is the driver's). On Linux it is `--platform linux` (or
+`scripts/linux/ngx-sdk.sh`), with `libnvsdk_ngx.a`, `libnvidia-ngx-dlss.so` and `libnvidia-ngx-dlssg.so`. A Windows
+game with DLSS can be built on Linux too, with `RX_TARGET=windows` as below.
 CI's `vulkan-dlss` workflow (`.github/workflows/vulkan-dlss.yml`) checks only that `hookshot_vk.dll` still links with the
 SDK. It runs by hand, and on a push or pull request only when a file DLSS's build depends on changes; it accepts NVIDIA's
 license for that run alone and uploads nothing.
@@ -132,12 +148,20 @@ workload, or build it from a developer prompt:
 dotnet build builder/HookshotBuilder.sln
 ```
 
+For a Windows installation that keeps its own state on an external SSD, see
+[portable Builder setup and relocation](docs/windows-portable-builder.md).
+
 You only need Visual Studio for the builder itself. The game build uses llvm-mingw.
 
 The Windows app's **Build workers** choice applies to builds started from that window. **Automatic** keeps the existing
 `HOOKSHOT_JOBS` override, or the build tools' free-memory policy when no override is set. A number overrides it for that
 build's child process only; more workers need more memory and are not always faster. This choice is not saved: a new
 window, including one started to update a game, uses Automatic again.
+
+Its **Build memory** choice is saved with the build's other settings, and the updates use it too, as they show no menu.
+**Automatic** keeps the free-memory policy. A number of GB sets
+`HOOKSHOT_MEM_LIMIT_GB` for that build: the compilers may then reserve that much together, whatever is free now. The
+compilers that always run (up to 4 on Windows) still run under a smaller number.
 
 ## Building
 
@@ -155,6 +179,9 @@ window, including one started to update a game, uses Automatic again.
 Use a separate `--work` folder or `OOT_WORK` if you keep more than one dump around. The lifted C and every build are
 local artifacts; they are never committed.
 
+Not measuring speed? [A faster build for development](docs/development.md#a-faster-build-for-development) compiles the
+hot code at `-O1`, about a quarter less compile time. Never use it for fps, timings or a release.
+
 ## Testing
 
 ### Game-free checks
@@ -168,7 +195,9 @@ python -I -B tests/run_all.py
 It runs every `tests/test_*.py` and `nx2/test_*.py` in its own process, the C++ unit tests under `gpu/vk/tests` and a
 byte-compile of every tracked Python file, goes on after a failure, and ends with a table (slowest first) and every
 failure's output. Name a check to run only the ones whose path contains it (`python -I -B tests/run_all.py ub_`). A new
-`test_*.py` file is picked up by itself: no workflow to edit.
+`test_*.py` file is picked up by itself: no workflow to edit. The slowest checks start first, by the times in
+`tests/run_all_times.json`, which also split CI's Linux and Windows runs into two parts each (`--shard 1/2`,
+`--shard 2/2`); a full run with `--write-times` refreshes this OS's times there.
 
 Some checks compile a small C or C++ fixture and need a compiler (`g++`, `gcc` or `clang++` on PATH), the SPIR-V
 validator (`spirv-val`), the SPIR-V or Vulkan headers (`HOOKSHOT_SPIRV_HEADERS` / `HOOKSHOT_VULKAN_HEADERS`, or the CPM
@@ -244,21 +273,47 @@ the development guide's [reference](docs/development.md#switches-for-testing-and
 1. Fork the repository and branch from `main`. Name the branch for the change: `fix/...`, `linux/...`, `builder/...`,
    `docs/...`.
 2. Keep the pull request to one topic. Bug fixes do not carry refactors, and two unrelated fixes are two PRs.
-3. Write the title as a short imperative sentence, as the history does: "Stop scanning storage-buffer tables after
-   one pass", "Linux: a crash report gives the whole host stack". Start the body with why the PR is needed, in one or
-   two plain sentences a player could follow: the bug, the missing feature or the cost it removes ("The menu's text
-   is cut off at 4K", "First starts spend 20 s waiting on a few shaders"). Then say what changed, how it was tested
-   (GPU, driver, game area, fps before and after), and link the issue it fixes.
-4. Include screenshots when the change shows on screen: graphics, the menu, the start-up screen, an overlay, a
+3. Write the title as a Conventional Commit (see [Pull request titles](#pull-request-titles) below). Start the body
+   with why the PR is needed, in one or two plain sentences a player could follow: the bug, the missing feature or the
+   cost it removes ("The menu's text is cut off at 4K", "First starts spend 20 s waiting on a few shaders"). Then say
+   what changed and how it was tested (GPU, driver, game area, fps before and after).
+4. Link the issues the PR fixes, if there are any. Write `Fixes #123` in the body (one line per issue) so that merging
+   the PR closes the issue. If the PR only addresses part of an issue, or is related to one, write `Part of #123` or
+   `See #123` instead, so the issue stays open. Search the open issues before you open the PR: a report may already
+   describe the bug you fixed.
+5. Include screenshots when the change shows on screen: graphics, the menu, the start-up screen, an overlay, a
    message. Before and after for a fix, the new screen for a feature, and the sizes or settings it was checked at. A
    screenshot of the game is fine; the rule above is about game files, not pictures of the game.
-5. Run the relevant checks. CI must pass; a change that only works on your machine is not ready.
-6. Rebase or merge `main` when it has moved, and resolve conflicts in your branch rather than in the review.
-7. Do not include build output, dumps, generated files or a `.gitignore` bypass. Check `git status`.
+6. Run the relevant checks. CI must pass; a change that only works on your machine is not ready. CI has no game, so
+   also run the change in the game and put what you measured in the description: before and after on the same
+   scene for a performance change, the bug gone for a fix. An untested change is opened as a draft.
+7. Rebase or merge `main` when it has moved, and resolve conflicts in your branch rather than in the review.
+8. Do not include build output, dumps, generated files or a `.gitignore` bypass. Check `git status`.
 
-Commit subjects decide the next release: write them as Conventional Commits (`feat:`, `fix:`, and `!` or
-`BREAKING CHANGE:` for a break). The version rules, branches and changelog format are in
-[docs/versioning.md](docs/versioning.md).
+### Pull request titles
+
+A pull request is squash-merged, so its title becomes the commit on `main`, and that commit decides the next release
+and its changelog line. The title is a [Conventional Commit](https://www.conventionalcommits.org/): a type, an optional
+scope in parentheses, a colon, and a short description. The *PR title* check fails until it is one; edit the title
+and the check runs again.
+
+| Type | For | Example from this repository |
+|---|---|---|
+| `feat` | something new for players or modders | `feat(menu): tabbed category layout for in-game options with bumper and Q/E navigation` |
+| `fix` | a bug fix | `fix: preserve the changelog when release generation fails` |
+| `perf` | faster, or less memory | `perf(linux): hand guest memory to the GPU as udmabuf dma-bufs, not host pointers` |
+| `refactor` | a change with no effect on behaviour | `refactor(vk): ...` |
+| `docs` | documentation only | `docs: document the built game's command-line arguments` |
+| `test` | tests only | `test: cover pool-less NVN buffer mappings` |
+| `ci` | the GitHub workflows | `ci: actions pinned by commit, least privilege, realistic timeouts, Dependabot and actionlint` |
+| `build` | the build scripts, the AppImage, the builder package | `build: scope the shader cache stamp to its consumer` |
+| `chore` | anything else | `chore: remove patch backup files added by mistake` |
+| `revert` | undoing an earlier change | `revert: ...`, with the reverted PR in the body |
+
+The scope is optional and names the part of the project: `vk`, `linux`, `builder`, `menu`, `video`, `runtime` and so
+on. `feat` makes the next release a minor version, and `fix` and `perf` a patch (each first as a release candidate). A `!` after the type or scope (`feat(builder)!: ...`)
+marks a breaking change. The other types make no release on their own. The commits inside a branch can be written
+any way you like: only the title reaches `main`. The version rules are in [docs/versioning.md](docs/versioning.md).
 
 Maintainer commits record AI assistance with `Assisted-by:` and `Co-Authored-By:` trailers. If you used a tool, add
 the trailers that describe it; if you wrote the change yourself, there is nothing to add.
@@ -278,9 +333,8 @@ NVIDIA's DLSS SDK is not one of them: it is never in the repository, and nothing
 ## Where to talk
 
 - **Issues:** [use the forms](https://github.com/NotRexed/Hookshot/issues/new/choose).
-- **Discord:** https://discord.gg/EajnD2AJD9. Use the `hookshot-discussion` channel; the server is mainly for
-  web ports, and that channel is where Hookshot talk belongs.
-- **Newest release:** https://github.com/NotRexed/Hookshot/releases/latest.
+- **Discord:** https://discord.gg/rexed. Use the `dev-work` channel for prs.
+- **Newest release:** https://github.com/NotRexed/Hookshot/releases/latest
 
 Thanks for testing, reporting and sending fixes. Every report from a different GPU and every area played further than
 before moves the port forward.

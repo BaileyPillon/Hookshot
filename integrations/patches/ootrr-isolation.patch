@@ -1,0 +1,97 @@
+--- a/src/oot_rando/paths.py
++++ b/src/oot_rando/paths.py
+@@ -6,6 +6,7 @@
+   no installation.
+ """
+ import sys
++import os
+ from pathlib import Path
+ 
+ FROZEN = bool(getattr(sys, 'frozen', False))
+@@ -21,6 +22,8 @@
+ 
+ def data_dir():
+     """Writable data root: ``<exe>/data`` when frozen, ``<project>/build`` otherwise."""
++    if managed := os.environ.get('LONGSHOT_OOTRR_DATA'):
++        return Path(managed).resolve()
+     return app_dir() / ('data' if FROZEN else 'build')
+ 
+ 
+--- a/src/oot_rando/gui/randomizer_gui.py
++++ b/src/oot_rando/gui/randomizer_gui.py
+@@ -132,10 +132,11 @@
+         self.app_state = self.read_app_state()
+         # Game file and mods folder: chosen once by the player, then remembered.
+         self.nup.set(self.app_state.get('game_file') or '')
+-        self.mods.set(self.app_state.get('mods_dir') or default_mods_dir())
++        managed = os.environ.get('LONGSHOT_OOTRR_GAME')
++        self.mods.set(str(Path(managed) / 'mods') if managed else self.app_state.get('mods_dir') or default_mods_dir())
+         self.nup.trace_add('write', lambda *args: self.write_app_state(game_file=self.nup.get()))
+         self.mods.trace_add('write', lambda *args: self.write_app_state(mods_dir=self.mods.get()))
+-        self.check_updates = tk.BooleanVar(value=self.app_state.get('check_updates', True) is not False)
++        self.check_updates = tk.BooleanVar(value=False if managed else self.app_state.get('check_updates', True) is not False)
+         self.check_updates.trace_add('write', lambda *args: self.write_app_state(check_updates=self.check_updates.get()))
+         self.updating, self.update_silent = False, True   # False, 'check' or 'install'
+         self.extra_emulators = tk.StringVar(value=self.app_state.get('extra_emulators') or '')
+@@ -837,6 +838,8 @@
+     # ---------------------------------------------------------- saves
+     def hookshot_root(self):
+         """Hookshot folder when the mods folder is ``<Hookshot>/mods``, else None (emulator)."""
++        if managed := os.environ.get('LONGSHOT_OOTRR_GAME'):
++            return Path(managed)
+         mods = Path(self.mods.get()) if self.mods.get() else None
+         return mods.parent if mods and mods.name.lower() == 'mods' else None
+ 
+@@ -857,6 +860,9 @@
+ 
+     def start_turbo(self):
+         """Turbo A is always on (no option): started once the window is up."""
++        if os.environ.get('LONGSHOT_OOTRR_GAME'):
++            self.turbo_status.set('Turbo A is disabled in Longshot; your controller bindings are preserved.')
++            return
+         if self.turbo:
+             self.turbo.stop()
+         self.turbo = turbo_a.TurboA(self.hookshot_root() or '')
+--- a/src/oot_rando/randomizer/randomizer_services.py
++++ b/src/oot_rando/randomizer/randomizer_services.py
+@@ -101,6 +101,8 @@
+ def validate_mod_directory(directory):
+     """Accept an emulator title folder or the mods folder of a built PC port (Hookshot, Longshot...)."""
+     directory = Path(directory).resolve()
++    from oot_rando.longshot import validate_mod_target
++    validate_mod_target(directory)
+     if directory.exists() and not directory.is_dir():
+         raise ValueError('The selected mods folder is a file.')
+     if directory.name.upper() == TITLE:
+--- a/src/oot_rando/tracker/live_memory.py
++++ b/src/oot_rando/tracker/live_memory.py
+@@ -233,6 +233,10 @@
+             if not handle:
+                 continue
+             image = self._exe(handle)
++            from oot_rando.longshot import allowed_process
++            if not allowed_process(image):
++                self.k32.CloseHandle(handle)
++                continue
+             name = Path(image).name.lower()
+             layout = None
+             if name not in emulators and is_port_process(image) and self._probe(handle):
+--- /dev/null
++++ b/src/oot_rando/longshot.py
+@@ -0,0 +1,16 @@
++"""Bound Longshot's optional companion to its separate mode installation."""
++import os
++from pathlib import Path
++
++
++def allowed_process(image):
++    game = os.environ.get('LONGSHOT_OOTRR_GAME')
++    if not game:
++        return True
++    return bool(image) and Path(image).resolve() == (Path(game) / 'hookshot.exe').resolve()
++
++
++def validate_mod_target(directory):
++    game = os.environ.get('LONGSHOT_OOTRR_GAME')
++    if game and Path(directory).resolve() != (Path(game) / 'mods').resolve():
++        raise ValueError('Longshot installs these seeds only in its separate full-randomizer game folder.')
