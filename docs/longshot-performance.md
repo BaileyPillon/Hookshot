@@ -78,4 +78,102 @@ benchmarks were paused while these checks and shader preparation ran.
 Complete shader preparation exited 0 after 2,229 seconds. It produced 25,382 noted graphics pipelines and 9,925 compute
 pipelines from 4,127 compute programs, with none missing. On the next normal start, NVIDIA's required first-game-process
 warm completed in 17.0 seconds (3.4 seconds for computes); subsequent loading used the prepared caches at program creation.
-The first run's long preparation is not an acceptable recurring startup cost: another fresh launch must verify reuse.
+A second normal launch reused those caches: startup preparation took 5.7 seconds and built no new noted pipelines.
+The 37-minute preparation did not repeat. This does not mean every pipeline predicted for the entire game is in the
+driver's cache: its separate probe found 3 of 32 predicted examples.
+
+The first GitHub run caught a Windows Microsoft-CRT `getenv` deprecation under `-Werror` in the new standalone
+occlusion fixture. Declaring `_CRT_SECURE_NO_WARNINGS` before its headers keeps the portable read-only call, assertions
+and warning policy intact. The fixture passed locally with the compiler's runtime DLL directory on PATH. All 13
+applicable GitHub jobs passed at `90c1e6b0`, including both OS source-test shards and the DLSS/FSR renderer link check.
+
+## Normal-startup gameplay and rejected settings
+
+These runs used normal shader preparation and default core reservation. Occlusion queries remained On; sampler
+caching was Off except in the explicitly named experiment. They use original-game present intervals, as above.
+
+| Run / view | Average FPS | p99 ms | Worst ms | Frames over 50 ms |
+|---|---:|---:|---:|---:|
+| final-a / Deku Tree standing, 35 s | 60.000 | 18.764 | 23.029 | 0 |
+| final-a / Deku Tree turning, 35 s | 59.990 | 18.951 | 55.953 | 1 |
+| final-a / Market standing, 45 s | 59.423 | 23.850 | 47.741 | 0 |
+| final-a / Market turning, 45 s | 59.195 | 23.822 | 45.319 | 0 |
+| final-a / field forest-entrance movement, 45 s | 58.005 | 31.540 | 104.575 | 9 |
+| final-a / Kakariko entrance movement, 45 s | 59.741 | 23.673 | 29.374 | 0 |
+| final-b / sampler cache On, Market standing, 45 s | 28.137 | 547.577 | 3145.334 | 43 |
+| final-b / sampler cache On, Market turning, 45 s | 2.143 | 2813.343 | 3011.796 | 70 |
+| final-c / sampler cache Off again, Market standing, 45 s | 53.396 | 28.231 | 102.539 | 4 |
+| final-c / sampler cache Off again, Market turning, 45 s | 55.396 | 32.227 | 184.705 | 12 |
+
+The movement windows combine forward stick input and camera turning. The field run is in its forest approach corridor,
+not the centre of the open field; Kakariko is its entry steps, not a village tour. Screenshots were inspected at the
+entries and after movement. This is bounded gameplay verification, not a campaign-wide visual/performance guarantee.
+
+The sampler-cache experiment was rejected and never written to saved options. Its severe stalls coincided with high
+system page-input activity. After reverting it, multi-second stalls disappeared, but the repeated default run was
+still slower than final-a. Background work was changing, so the sampler switch alone cannot be assigned all of that
+difference. During final-c, the game had a 15.13 GiB working set, Windows had about 4.2 GB available, and Blender and AI
+applications were active. They were left running. Page-input counters include file-backed reads and do not by themselves
+prove that Windows was reading the page file or that the game has a memory leak.
+
+These results establish near-60 gameplay in several bounded windows, **not sustained smooth 60 FPS everywhere**.
+
+## Pipeline-cache memory experiment
+
+`memory-a` used child-only `RX_VK_PCACHE_LOAD=0`, leaving the existing cache files intact. Market standing/turning
+averaged 58.043 / 58.836 FPS, p99 28.420 / 25.978 ms, with 4 / 3 frames over 50 ms. Its working set near the Market
+windows was about 13.4 GB. The later forest movement crossed into Kokiri Forest; that timing window was rejected.
+
+The experiment also made 1,152 listed pipelines unavailable from the caches. The existing safety net consequently
+wrote `hookshot_load_start.txt`, changing later automatic launches from loading programs when the game creates them
+to keeping all listed programs ready before the title. `memory-control`, with the pipeline cache enabled again,
+therefore **was not a single-variable comparison** with memory-a. It averaged 56.249 / 51.567 FPS, p99 33.788 / 65.395 ms,
+with 9 / 56 frames over 50 ms. Its working set was about 20.5 GB and available physical memory fell below 2 GB.
+
+The file-cache-off repeat `memory-b` inherited that fallback and began recompiling 26,792 listed pipelines before
+the title. Preparation took 352.5 seconds. Its Market standing/turning windows averaged 52.000 / 53.220 FPS, p99
+49.233 / 41.786 ms, with 22 / 16 frames over 50 ms. The working set again reached about 20.5 GB. This memory option
+is rejected: it was never saved to the environment file. The changed loader mode,
+uncontrolled background activity and startup cost prevent treating the 13.4-versus-20.5 GB observations as an isolated
+measurement of the pipeline cache file's memory cost. The fallback marker is retained with the local experiment
+evidence when restoring the normal cache-backed path; genuine repeated cache misses remain protected by the safety net.
+
+## Follow-up renderer changes
+
+Source fingerprint `844b897e` adds two reviewed GPL backports from the separate community project:
+
+- [Hugo Claria's `fbd42024`](https://git.magicbean.dev/MagicBeanDev/Longshot/commit/fbd420241afdba1d5ba2936971eb48549edb85ae):
+  take the per-thread pass/descriptor writer once per hot function, retaining the same object and rendering operations.
+  Four affected fixtures use the new reference names while keeping their existing assertions. The author's measured
+  Steam Deck CPU-work reduction is not reported as a Windows FPS gain here.
+- [HumanBean's `341d63a4`](https://git.magicbean.dev/MagicBeanDev/Longshot/commit/341d63a485013ef56ef4912a8553caa2959a3239):
+  a single isolated slow program load no longer permanently selects the heavier start mode. Only waits over 20 ms
+  count; over 500 ms in two consecutive sessions or over 2,000 ms in one session trigger that fallback. The independent
+  rule for more than 500 unavailable listed pipelines is unchanged, so it still catches the rejected cache experiment.
+  Compiled fixtures cover thresholds, consecutive-session strikes, marker files and cache-miss protection.
+
+The local build examined 646 translation units, completed compilation in 31 seconds with no failures, and linked the
+executable and renderer in 3 seconds and under 1 second respectively. The shader translator and cache stamp inputs are
+unchanged. The old experimental binaries are retained locally for alternating comparisons and rollback.
+The complete local source suite passed **495 checks, zero failures, 43 declared skips** in 478 seconds with three
+workers and no game running. No assertion, warning policy or timeout was relaxed.
+
+### Alternating full-game comparison
+
+Both sides used the same preserved graphics settings, pipeline cache enabled and explicit child-only
+`RX_VK_LOAD=create`. Each fresh launch used the same private save copy and the same settled Market entry route.
+Windows were 30 seconds standing and 30 seconds turning; no compiler, source tests or sampler ran concurrently.
+The normal process priority and all other user applications were retained. Binary copies were SHA-256 verified.
+
+| Run / source | Standing FPS / p99 ms | Turning FPS / p99 ms | Frames over 50 ms, standing / turning |
+|---|---|---|---|
+| cpu-before-a / 23b69111 | 51.920 / 33.943 | 44.575 / 42.503 | 1 / 2 |
+| cpu-after-a2 / 844b897e | 56.027 / 29.960 | 52.099 / 41.746 | 3 / 5 |
+| cpu-before-b2 / 23b69111 | 56.608 / 29.683 | 57.303 / 27.931 | 0 / 2 |
+| cpu-after-b2 / 844b897e | 58.029 / 27.462 | 58.870 / 25.589 | 0 / 2 |
+
+The candidate was faster than its preceding control in both pairs, but the control's own large improvement shows
+substantial run-to-run variation. The evidence supports retaining the tested changes, not attributing the entire
+FPS difference to them or promising a locked 60. The final comparison left the candidate installed in ordinary
+experimental mode; the dedicated randomizer and regular play installations were not updated. No fallback or strike
+marker was recreated during these four runs, and the saved environment still contains no loading/cache override.

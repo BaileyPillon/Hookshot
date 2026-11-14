@@ -44,7 +44,22 @@ The follow-up runtime work also backports MagicBeanDev/Longshot's GPL occlusion-
 `cd9062658d35884032590b822b825ebbd00899e2`. It restores the game's ability to omit hidden objects instead of reporting
 every visibility query as visible. The [local performance investigation](longshot-performance.md) records same-build
 On/Off comparisons, unfavourable runs, shader preparation and verification limits. The comparison and maintainer
-Reddit threads above were reopened during this follow-up: they still do not establish a universal fastest fork.
+Reddit threads linked in this report were reopened during this follow-up: they still do not establish a universal fastest fork.
+
+The same review selected Hugo Claria's GPL renderer-accessor change
+[`fbd42024`](https://git.magicbean.dev/MagicBeanDev/Longshot/commit/fbd420241afdba1d5ba2936971eb48549edb85ae)
+for local validation. Six hot renderer functions take their per-thread pass or descriptor writer once instead of
+repeating its lookup. The backport preserves this fork's comments and occlusion handling; its four affected source
+fixtures keep their assertions. The author's Steam Deck measurements showed less render-thread work, not a reliable
+FPS gain. Those measurements are not evidence of an FPS gain on this Windows PC.
+
+HumanBean's GPL loading-policy fix
+[`341d63a4`](https://git.magicbean.dev/MagicBeanDev/Longshot/commit/341d63a485013ef56ef4912a8553caa2959a3239)
+also avoids making the heavier startup mode permanent after one isolated slow shader load. It requires substantial
+waits in consecutive sessions or over two seconds of long waits in one session. The independent safeguard for more
+than 500 missing cached pipelines remains unchanged. This is relevant to multitasking PCs; it does not make disabling
+the pipeline cache advisable. The local backport retains Hookshot's existing marker filename and adds the strike-file
+cleanup and compiled policy tests from upstream.
 
 - **NX2navi is not wholly MIT.** Its repository metadata reports MIT, but
   [LICENSE-ADDITIONS](https://github.com/tangerineturtle1/NX2navi/blob/5190f8e932b9/LICENSE-ADDITIONS)

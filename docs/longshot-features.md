@@ -226,6 +226,7 @@ The mod manager and companions are tools in this checkout; no new installer or d
 
 No default enables frame generation or HDR here. For a system that previously showed flicker, begin testing with its known
 working settings and compare the same scene before trying these features. The subsequent
-[performance investigation](longshot-performance.md) records the occlusion-query backport, controlled comparisons and
+[performance investigation](longshot-performance.md) records the occlusion-query backport, reduced per-draw CPU lookups,
+the safeguard against isolated shader stalls selecting a heavier loading mode, controlled comparisons and
 remaining limits. It does not establish sustained 60 FPS throughout the game or promote the experimental build over the
 regular installation.
