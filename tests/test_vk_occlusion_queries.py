@@ -45,6 +45,11 @@ def ring_code(text):
 
 
 FIXTURE = r'''
+// getenv is deliberately read-only here; allow the same portable C call with
+// the Microsoft CRT used by Windows CI, while retaining -Werror below.
+#ifndef _CRT_SECURE_NO_WARNINGS
+#define _CRT_SECURE_NO_WARNINGS
+#endif
 #include <algorithm>
 #include <chrono>
 #include <cstdarg>
