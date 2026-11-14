@@ -392,6 +392,7 @@ HDR, Detail, and GPU and memory (last: the rows to change when something is wron
 | | Menu shortcut | Insert or F1; F1 only; Insert, F1 or Esc | Insert, F1 or Esc |
 | | Compact menu key | Right Shift, Right Ctrl | Right Shift |
 | Debug | Debug tools | Off, On (the tools below it while on) | Off |
+| | Player: Damage taken | Half, Normal, Double, Quadruple (Normal while Debug tools are off) | Normal |
 | | Developer: Descriptor reuse | Off, On (after a restart) | On |
 | | Developer: Sampler cache | Off, On (after a restart) | Off |
 | | Developer: Robust buffers | Auto, Off, On (after a restart) | Auto |
@@ -407,6 +408,12 @@ HDR, Detail, and GPU and memory (last: the rows to change when something is wron
   world and lower brings it closer. The game's zoom changes remain relative to your choice.
   Aiming has been tested in the 50% to 150% range, including with ultrawide enabled.
   Cutscenes, the HUD and movies keep their own view. The setting is saved as `field_of_view` in `hookshot_options.ini`.
+- **Hold-to-toggle** is the Toggle column on Controls → Controls. Enable it for a button to press once to hold and
+  press again to release, using either its controller binding or key. It starts Off for every button. Opening a menu,
+  pausing, losing focus or changing bindings clears held buttons; Plus, Minus and ocarina-only note bindings cannot latch.
+- **Damage taken** is in Debug → Player with Debug tools enabled. Half rounds damage up to a quarter heart, Double
+  and Quadruple increase enemy damage, and healing is unchanged. Normal remains the default and applies whenever
+  Debug tools are off. Heart protection takes precedence when explicitly enabled.
 - **GPU device** matters on a PC with more than one graphics card (a laptop's integrated and dedicated GPUs, or a
   second card for Lossless Scaling). Auto prefers a dedicated one, and only cards with Vulkan 1.3 are listed.
   `hookshot_log.txt` lists every card as `vk: device <n>`; `RX_VK_DEVICE=<n>` chooses one for a single run and wins

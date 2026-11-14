@@ -51,6 +51,10 @@ enum { HOS_OPT_FOV = 51 };
    and Navi waking Link. 44 stays reserved for Skip title, 49 and 50 for Walk, 60 for the item wheel. A new option id
    answered by the existing option callback does not change MkwVkHost or MkwVkRenderer.) */
 enum { HOS_OPT_SKIP_OPENING = 52 };
+/* Hold-to-toggle's enabled Switch buttons, 1 << HOS_SW_*. Off (zero) by default; the existing option callback. */
+enum { HOS_OPT_HOLD_TOGGLE = 54 };
+/* Damage taken: 0 Half, 1 Normal (unchanged), 2 Double, 3 Quadruple. */
+enum { HOS_OPT_DAMAGE_TAKEN = 55 };
 
 /* (hookshot) the controls' names (host/nn_hid.c, host/pad_sdl.c, the pad_ and key_ lines of hookshot_options.ini):
    the Switch's buttons in nn::hid's bit order, and a gamepad's inputs by position (the bottom face button first:

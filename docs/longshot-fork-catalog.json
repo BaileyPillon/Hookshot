@@ -42,12 +42,12 @@
   {
     "repository": "Sacrappy/HeyListen",
     "url": "https://github.com/Sacrappy/HeyListen",
-    "reviewed_commit": "be8bd70948b16e438a403a8a945edbce63080278",
-    "retrieved_utc": "2026-11-13T15:26:32.788082+00:00",
-    "stars_at_review": 6,
+    "reviewed_commit": "b7b5a08a66e517785494f223011d511ce5a8f1b8",
+    "retrieved_utc": "2026-11-14T03:10:18.171616+00:00",
+    "stars_at_review": 19,
     "reported_license": "GPL-3.0",
     "access_error": null,
-    "decision": "Large host/job/render redesign. Not a small compatible feature patch; requires separate architecture and cross-GPU evaluation."
+    "decision": "Large host/job/render redesign remains a separate architectural candidate. No wholesale merge into the co-op-compatible native base."
   },
   {
     "repository": "RufflezAU/Hookshot",
@@ -172,12 +172,12 @@
   {
     "repository": "giangero1/Fritchii-ZeroStutter",
     "url": "https://github.com/giangero1/Fritchii-ZeroStutter",
-    "reviewed_commit": "85c513f2e609a7a4c7faff9ee93732cf9ee4b659",
-    "retrieved_utc": "2026-11-13T15:26:44.570026+00:00",
-    "stars_at_review": 2,
+    "reviewed_commit": "f12879ab0d25a34b86392e0858806b41a8077a66",
+    "retrieved_utc": "2026-11-14T03:10:18.171873+00:00",
+    "stars_at_review": 3,
     "reported_license": "GPL-3.0",
     "access_error": null,
-    "decision": "Shader/preparation claims; use compatible Hookshot pipeline-state recipes and local compilation, not shared game-derived shader blobs."
+    "decision": "Newer frame-generation and shader-preparation claims reviewed. Emulator-specific implementation and FPS screenshots do not establish a gain on this PC; keep frame generation off after confirmed flickering here. No community game-derived shader payloads imported."
   },
   {
     "repository": "byronlai99/Fritchii-HDrum",
@@ -202,12 +202,12 @@
   {
     "repository": "zortos293/Lichii",
     "url": "https://github.com/zortos293/Lichii",
-    "reviewed_commit": "87d84d513c67275ad0d6ae50ba51cce76e7e3ded",
-    "retrieved_utc": "2026-11-13T15:26:47.831742+00:00",
-    "stars_at_review": 8904,
+    "reviewed_commit": "7224c26a66ae5f2d0895f92875b2095d9d7d81e1",
+    "retrieved_utc": "2026-11-14T03:10:18.290504+00:00",
+    "stars_at_review": 9006,
     "reported_license": "GPL-3.0",
     "access_error": null,
-    "decision": "Popular emulator foundation. Useful compatibility reference, not a native Hookshot subsystem to merge."
+    "decision": "Popular emulator foundation. Clustered-light shadow-map handling from bd0171f7 and 282a585a adapted through the licensed MagicBean native port 7315957c; no emulator core transplant."
   },
   {
     "repository": "Manaclenodisconnect/Lichii-Enhanced",
@@ -282,12 +282,12 @@
   {
     "repository": "tangerineturtle1/NX2navi",
     "url": "https://github.com/tangerineturtle1/NX2navi",
-    "reviewed_commit": "5190f8e932b92cf694d9f8b5a7ef6e52c141de2a",
-    "retrieved_utc": "2026-11-13T15:26:55.224299+00:00",
-    "stars_at_review": 3755,
-    "reported_license": "Mixed: additions reserved",
+    "reviewed_commit": "5ae55db41c7d11c4e997d2676019939a936e560b",
+    "retrieved_utc": "2026-11-14T03:10:18.412554+00:00",
+    "stars_at_review": 3926,
+    "reported_license": "MIT",
     "access_error": null,
-    "decision": "Research-only: LICENSE-ADDITIONS reserves new code despite MIT metadata. Independent/upstream analogues cover graphics/UI features; no reserved additions copied."
+    "decision": "Research-only: LICENSE-ADDITIONS still reserves additions at the refreshed head despite MIT metadata. Reviewed recent render-target reuse and helper-thread defaults; no reserved source copied. Native independent/upstream equivalents selected."
   },
   {
     "repository": "loteran/NX2navi",
@@ -432,22 +432,22 @@
   {
     "repository": "Frizti/Fritchii",
     "url": "https://github.com/Frizti/Fritchii",
-    "reviewed_commit": "",
-    "retrieved_utc": "2026-11-13T15:31:53.136718+00:00",
-    "stars_at_review": null,
-    "reported_license": "Unverified",
-    "access_error": "gh: Not Found (HTTP 404)",
-    "decision": "Original URL returned 404. Surviving mirrors and shared Hookshot pipeline-source provenance used instead."
+    "reviewed_commit": "f66ea633db6058efe31a9611718019e5bd1667eb",
+    "retrieved_utc": "2026-11-14T03:10:15.184788+00:00",
+    "stars_at_review": 4009,
+    "reported_license": "GPL-3.0",
+    "access_error": null,
+    "decision": "Original URL accessible again at this refresh. Emulator source and save-export workflows reviewed; shared pipeline recipe already present. Native Longshot save import preserves source profiles."
   },
   {
     "repository": "MagicBeanDev/Longshot",
     "url": "https://git.magicbean.dev/MagicBeanDev/Longshot",
-    "reviewed_commit": "fbd420241afdba1d5ba2936971eb48549edb85ae",
-    "stars_at_review": 21,
-    "retrieved_utc": "2026-11-13T18:00:22.318052+00:00",
+    "reviewed_commit": "cf605c85bbaeaaa78176b933b3bc1a3366e13a78",
+    "stars_at_review": 48,
+    "retrieved_utc": "2026-11-14T03:10:00+00:00",
     "reported_license": "GPL-3.0",
     "access_error": null,
-    "decision": "Distinct Team MagicBean community project, not BaileyPillon/Longshot. Reviewed release/feature history; no wholesale merge of its diverged runtime or replacement of this fork. Save importer, profile separation and launcher workflows independently covered here."
+    "decision": "Separate community project, not BaileyPillon/Longshot. Eleven more GPL changes selectively adapted: toggles, damage scaling and correction, ocarina/web/layout fixes, CPU paths, occlusion correction, Lichii shadow-map tables. Sparse VRAM and broad engine replacement deferred; see source provenance."
   },
   {
     "repository": "MagicBeanDev/LongshotLauncher",
@@ -458,5 +458,35 @@
     "reported_license": "GPL-3.0",
     "access_error": null,
     "decision": "Distinct Team MagicBean community project, not BaileyPillon/Longshot. Reviewed release/feature history; no wholesale merge of its diverged runtime or replacement of this fork. Save importer, profile separation and launcher workflows independently covered here."
+  },
+  {
+    "repository": "dev-ewann/Longshot",
+    "url": "https://github.com/dev-ewann/Longshot",
+    "reviewed_commit": "01d3ee79e732a9978ae5a55f2953e171c1bd32bd",
+    "retrieved_utc": "2026-11-14T03:10:15.225832+00:00",
+    "stars_at_review": 12,
+    "reported_license": "GPL-3.0",
+    "access_error": null,
+    "decision": "Surviving copy at the same reviewed revision as madebyjordan/Longshot; no additional distinct feature established by this head."
+  },
+  {
+    "repository": "Z-TOON/Hookshot",
+    "url": "https://github.com/Z-TOON/Hookshot",
+    "reviewed_commit": "1ea715d1d91c82bb421b6aa95a21c6b625ac8eea",
+    "retrieved_utc": "2026-11-14T03:10:15.162175+00:00",
+    "stars_at_review": 11,
+    "reported_license": "GPL-3.0",
+    "access_error": null,
+    "decision": "Surviving personal Hookshot copy. Reviewed the distinct 1ea715d1 capture-to-mirror compute-copy change (181 renderer lines and a regression fixture). Deferred from this bundle: upstream evidence mainly reduces GPU upload time, while local profiling points to CPU submission costs. Shared renderer history overlaps the existing base."
+  },
+  {
+    "repository": "antonioalvromero/Ocarina-Atlas",
+    "url": "https://github.com/antonioalvromero/Ocarina-Atlas",
+    "reviewed_commit": "96c92a9ea7f7e2ebfc16798ce9fdf5f6584fa8fe",
+    "retrieved_utc": "2026-11-14T03:10:15.170434+00:00",
+    "stars_at_review": 5,
+    "reported_license": "MIT",
+    "access_error": null,
+    "decision": "MIT live atlas/dungeon/Skulltula tracker candidate. Its live RPC targets Lichii/Fritchii, not the native bridge. Requires an explicit adapter and map-asset provenance review; not installed or represented as compatible. Existing Boomerang save tracker remains available."
   }
 ]

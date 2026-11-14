@@ -1,5 +1,8 @@
 # Optional source integrations
 
+The additional native controller, gameplay and renderer ports have a separate
+[revision and attribution record](feature-backports.md).
+
 `manifest.json` records the exact reviewed revisions; `.gitmodules` records their upstream locations.
 These are optional source dependencies, not bundled game files or prebuilt executables.
 Each submodule retains its own license and attribution. Initialize them with `git submodule update --init`.

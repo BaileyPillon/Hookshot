@@ -4,7 +4,7 @@ Research date: **13 November 2026**. Stars, availability and default branches ar
 
 ## Method and coverage
 
-The survey collected **46 repository records** (43 accessible; three returned 404), including source trees, README claims,
+The survey collected **49 repository records** (47 accessible; two returned 404 at their respective checks), including source trees, README claims,
 licenses, default-head revisions, recent commits and releases. GitHub's direct fork inventories supplied **1,379 Lichii
 fork records** and **274 NX2navi fork records** for candidate discovery. These are metadata inventories, not 1,653
 individually audited codebases or necessarily unique projects. The table below is the reviewed shortlist, selected for
@@ -14,8 +14,8 @@ on the integrations, compatibility boundaries and license questions.
 Public GitHub search, surviving fork networks and relevant community links were used alongside the APIs. No relevant
 repositories were found in the authenticated account's starred list. A follow-up read-only scan of six local Chromium
 bookmark files and one Firefox bookmark database found no matching GitHub project bookmarks; unrelated bookmarks
-and browsing history were not exported. Original Hookshot and Fritchii URLs returned 404;
-that establishes availability, not the reason they disappeared. Renamed, private or unindexed forks can be missed.
+and browsing history were not exported. The original Hookshot URL returned 404; Fritchii was accessible again at the later refresh.
+Availability does not establish why an earlier request failed. Renamed, private or unindexed forks can be missed.
 
 The requested “frichi” and “lichi” were interpreted as **Fritchii** and **Lichii**. Hookshot is the native Switch 2 remake
 recompilation. NX2navi and sostenesfreitas/ocarina-recomp also compile the Switch 2 remake natively, with different
@@ -40,6 +40,27 @@ called NX2navi an emulator and ocarina-recomp an N64 port; their own architectur
 
 ## License and evidence findings that change the selection
 
+### Second native feature bundle
+
+The later November 13 refresh rechecked eight active/new candidates and selected eleven additional GPL commits
+from the separate MagicBean community runtime. [Exact revisions, authors and adaptation notes](../integrations/feature-backports.md)
+cover per-button hold toggles, damage scaling with its lethal-hit correction, complete controller-layout application,
+Scarecrow Song timing and remapped recall, the high-FPS Deku floor-web fix, host/range-walk CPU changes, an occlusion
+correctness follow-up, and Lichii-derived clustered-light shadow maps. These are source adaptations, not a merge of
+the other runtime's updater or settings. [Validation](longshot-validation.md) records which checks actually ran.
+
+The control choice answers recurring requests to run while moving the camera in the
+[QoL discussion](https://www.reddit.com/r/zelda/comments/1xs0xds/oothd_possible_qol_features_to_patch_in/) and
+[controller discussion](https://www.reddit.com/r/OcarinaOfTime/comments/1xp7ph6/i_wish_they_hadnt_botwified_the_controls/).
+Those comments establish demand, not a unanimous binding preset. Toggles therefore default off and existing DualSense
+bindings stay intact. The newer [Longshot comparison](https://www.reddit.com/r/SwitchPirates2/comments/1xveqhz/longshot_is_waaay_better_than_hookshot/)
+also includes lighting complaints alongside positive performance reports; it does not establish compatibility on this PC.
+
+The newest sparse-VRAM branch was reviewed but not combined: its primary benefit is fitting smaller VRAM budgets,
+and the target card has 16 GiB. Ocarina Atlas is a noteworthy MIT live-tracker candidate, but currently targets emulator
+RPC and needs a native adapter plus map-asset review. Neither is advertised as installed. Fritchii-ZeroStutter's newer
+frame-generation claims do not reverse this user's confirmed flickering result; frame generation stays off.
+
 The follow-up runtime work also backports MagicBeanDev/Longshot's GPL occlusion-query fix at
 `cd9062658d35884032590b822b825ebbd00899e2`. It restores the game's ability to omit hidden objects instead of reporting
 every visibility query as visible. The [local performance investigation](longshot-performance.md) records same-build
@@ -62,7 +83,7 @@ the pipeline cache advisable. The local backport retains Hookshot's existing mar
 cleanup and compiled policy tests from upstream.
 
 - **NX2navi is not wholly MIT.** Its repository metadata reports MIT, but
-  [LICENSE-ADDITIONS](https://github.com/tangerineturtle1/NX2navi/blob/5190f8e932b9/LICENSE-ADDITIONS)
+  [LICENSE-ADDITIONS](https://github.com/tangerineturtle1/NX2navi/blob/5ae55db41c7d/LICENSE-ADDITIONS)
   reserves later additions and requires written permission for copying/modification/distribution. No such code was
   copied, and a derivative fork is not a way around that restriction. Its descriptions informed comparison only.
   Similar DLSS/FSR/HDR/ultrawide/diagnostic features came from independently available Hookshot code instead.
@@ -122,29 +143,27 @@ README descriptions below are discovery evidence, not independent gameplay verif
 
 | Repository | Stars | Reviewed revision | Finding / decision |
 |---|---:|---|---|
-| [MagicBeanDev/Longshot](https://git.magicbean.dev/MagicBeanDev/Longshot) | 21 | `fbd420241afd` | Separate community continuation, not this fork. Reviewed native source and large runtime/builder divergence; no wholesale merge or unmeasured performance claim. |
-| [MagicBeanDev/LongshotLauncher](https://git.magicbean.dev/MagicBeanDev/LongshotLauncher) | 2 | `0e6e1d78210e` | GPL launcher/version-management reference. Longshot already has independent profile/import/companion tooling; no updater redirected between the two projects. |
 | [BaileyPillon/Longshot](https://github.com/BaileyPillon/Longshot) | 0 | [d481e1336dfb](https://github.com/BaileyPillon/Longshot/tree/d481e1336dfb2de7cc8c255e042c7843aa0f7070) | Our fork; retained its checkpoint/devtools work and advanced the upstream base. |
 | [NotRexed/Hookshot](https://github.com/NotRexed/Hookshot) | — | 404 | Original URL returned 404; recovered the exact v2.2.0-rc.1 revision through the surviving GitHub fork network. |
 | [Shakoquo/Mako](https://github.com/Shakoquo/Mako) | 27 | [348436cce81b](https://github.com/Shakoquo/Mako/tree/348436cce81b3d095ab2a312a0d8e63c267778b4) | AMD/foliage fixes, hardware-aware setup, Master Quest child-dungeon preview. Hardware advice, launcher and save-import workflow independently adapted; common upstream fixes retained. Restricted controller art and partial dungeon mode not imported. |
 | [madebyjordan/Longshot](https://github.com/madebyjordan/Longshot) | 2 | [01d3ee79e732](https://github.com/madebyjordan/Longshot/tree/01d3ee79e732a9978ae5a55f2953e171c1bd32bd) | Unrelated fork sharing our name; older AMD-oriented changes. Do not confuse its releases with this project. |
-| [Sacrappy/HeyListen](https://github.com/Sacrappy/HeyListen) | 6 | [be8bd70948b1](https://github.com/Sacrappy/HeyListen/tree/be8bd70948b16e438a403a8a945edbce63080278) | Large host/job/render redesign. Not a small compatible feature patch; requires separate architecture and cross-GPU evaluation. |
+| [Sacrappy/HeyListen](https://github.com/Sacrappy/HeyListen) | 19 | [b7b5a08a66e5](https://github.com/Sacrappy/HeyListen/tree/b7b5a08a66e517785494f223011d511ce5a8f1b8) | Large host/job/render redesign remains a separate architectural candidate. No wholesale merge into the co-op-compatible native base. |
 | [RufflezAU/Hookshot](https://github.com/RufflezAU/Hookshot) | 8 | [216f7ebd5094](https://github.com/RufflezAU/Hookshot/tree/216f7ebd5094891376a3c583a86e80560d33ed53) | Deck/Linux performance work. Catalogue for that hardware; no global Windows desktop defaults imported. |
 | [mihawk-99/PS5_Hookshot](https://github.com/mihawk-99/PS5_Hookshot) | — | 404 | URL returned 404; no source implementation verified or imported. |
 | [TomShafford/Hookshot](https://github.com/TomShafford/Hookshot) | 8 | [7cb3bfceb81f](https://github.com/TomShafford/Hookshot/tree/7cb3bfceb81f96583521e859bd09280391b6a11d) | OoT fix branch; overlap with newer shared upstream. No duplicate cherry-picks or unmeasured defaults. |
 | [evilmfkr/Evil_Hookshot](https://github.com/evilmfkr/Evil_Hookshot) | 8 | [82959d30fd98](https://github.com/evilmfkr/Evil_Hookshot/tree/82959d30fd9812005759ef30dfd2d9d7404c82c3) | Renderer/build compatibility work; shared upstream includes EvilOOT-derived build support. |
 | [mooki000/hookshot-workbench](https://github.com/mooki000/hookshot-workbench) | 1 | [58ccb6e57152](https://github.com/mooki000/hookshot-workbench/tree/58ccb6e5715209aea639d721b62ab47ca4df950e) | Developer tooling concept; use the newer native control/bug-report bridge already in the upstream merge. |
 | [LucieTheFool/boomerang-tracker](https://github.com/LucieTheFool/boomerang-tracker) | 0 | [0fb33437e620](https://github.com/LucieTheFool/boomerang-tracker/tree/0fb33437e620adb3d3634f28ed7650c20bb2361c) | Integrated as a pinned companion: read-only completion tracking, reachable-item suggestions, overlay and hotkeys; build/test fixes recorded. |
-| [Mozencaz/OotrR](https://github.com/Mozencaz/OotrR) | 4 | [fdc2b2f26ba14](https://github.com/Mozencaz/OotrR/tree/fdc2b2f26ba146b60f565aa83892ccd8bb25acdc) | MIT added after the first review; integrated as an optional full-randomizer companion with dedicated game/mod/process boundaries. |
+| [Mozencaz/OotrR](https://github.com/Mozencaz/OotrR) | 4 | [fdc2b2f26ba1](https://github.com/Mozencaz/OotrR/tree/fdc2b2f26ba146b60f565aa83892ccd8bb25acdc) | MIT license added after the initial review. Integrated as a pinned optional full randomizer, with separate game/mod/process boundaries and automatic controller-remapping disabled. |
 | [Smeef123/OoTRemakeRando](https://github.com/Smeef123/OoTRemakeRando) | 3 | [b6b85b4303f2](https://github.com/Smeef123/OoTRemakeRando/tree/b6b85b4303f29e562b0bb4fc09752f01792e845e) | Randomizer candidate, unclear license metadata; chose the explicitly MIT Hookshot-specific implementation instead. |
 | [KAMOX06/hookshot-randomized](https://github.com/KAMOX06/hookshot-randomized) | 2 | [91f301987e8f](https://github.com/KAMOX06/hookshot-randomized/tree/91f301987e8f67b5239bb22429137077a1e330d0) | Integrated as pinned companion: chest/shop shuffle, skips, world-opening options, spoiler log and seed-specific saves. No progression solver. |
 | [daurosk/oot-remake-multiplayer](https://github.com/daurosk/oot-remake-multiplayer) | 93 | [f5e4ca3b4071](https://github.com/daurosk/oot-remake-multiplayer/tree/f5e4ca3b407197349af3045abff4bb7475ac2fd8) | Integrated exact-base GPL bridge and pinned module; opt-in co-op, remote puppets, sync and chat. Automated tests, not two-player gameplay, verified here. |
 | [ZuanCrisp/Fritchii](https://github.com/ZuanCrisp/Fritchii) | 7 | [7aeddb77aa41](https://github.com/ZuanCrisp/Fritchii/tree/7aeddb77aa41cbb32888c8b726d20fd0e16ff192) | Surviving mirror/release history; default nx2 is emulator code. Fritchii pipeline preparation is incorporated through the matching Hookshot upstream change. |
 | [Benjaminvdw/Fritchii](https://github.com/Benjaminvdw/Fritchii) | 16 | [ef3679e93fac](https://github.com/Benjaminvdw/Fritchii/tree/ef3679e93fac5954ac6ea4476e495b65c2e36d2a) | Linux AppImage packaging candidate; newer Hookshot already has its own Linux packaging, not merged wholesale. |
-| [giangero1/Fritchii-ZeroStutter](https://github.com/giangero1/Fritchii-ZeroStutter) | 2 | [85c513f2e609](https://github.com/giangero1/Fritchii-ZeroStutter/tree/85c513f2e609a7a4c7faff9ee93732cf9ee4b659) | Shader/preparation claims; use compatible Hookshot pipeline-state recipes and local compilation, not shared game-derived shader blobs. |
+| [giangero1/Fritchii-ZeroStutter](https://github.com/giangero1/Fritchii-ZeroStutter) | 3 | [f12879ab0d25](https://github.com/giangero1/Fritchii-ZeroStutter/tree/f12879ab0d25a34b86392e0858806b41a8077a66) | Newer frame-generation and shader-preparation claims reviewed. Emulator-specific implementation and FPS screenshots do not establish a gain on this PC; keep frame generation off after confirmed flickering here. No community game-derived shader payloads imported. |
 | [byronlai99/Fritchii-HDrum](https://github.com/byronlai99/Fritchii-HDrum) | 1 | [d4fa6f74a20f](https://github.com/byronlai99/Fritchii-HDrum/tree/d4fa6f74a20fc1e4737cb708ff950ca58e0504fe) | Fritchii language/distribution variation; source-localized Hookshot menus already incorporated. |
 | [juvxncio/zelda-oot-perfis](https://github.com/juvxncio/zelda-oot-perfis) | 1 | [0e59f3c0e258](https://github.com/juvxncio/zelda-oot-perfis/tree/0e59f3c0e258cc50495d6796a6efae1f6846df53) | Nine-profile workflow adapted independently in the native host. Its emulator ExeFS module is not copied into the recompilation. |
-| [zortos293/Lichii](https://github.com/zortos293/Lichii) | 8904 | [87d84d513c67](https://github.com/zortos293/Lichii/tree/87d84d513c67275ad0d6ae50ba51cce76e7e3ded) | Popular emulator foundation. Useful compatibility reference, not a native Hookshot subsystem to merge. |
+| [zortos293/Lichii](https://github.com/zortos293/Lichii) | 9006 | [7224c26a66ae](https://github.com/zortos293/Lichii/tree/7224c26a66ae5f2d0895f92875b2095d9d7d81e1) | Popular emulator foundation. Clustered-light shadow-map handling from bd0171f7 and 282a585a adapted through the licensed MagicBean native port 7315957c; no emulator core transplant. |
 | [Manaclenodisconnect/Lichii-Enhanced](https://github.com/Manaclenodisconnect/Lichii-Enhanced) | 277 | [bfe1a537fd9d](https://github.com/Manaclenodisconnect/Lichii-Enhanced/tree/bfe1a537fd9dac106d799917e8598b70353bce25) | Only README and LICENSE in the reviewed tree. Advertised manager/wizard/online functions are not an implementation; mod-management idea independently implemented. |
 | [Shakoquo/Lichii-sharkiix-version](https://github.com/Shakoquo/Lichii-sharkiix-version) | 88 | [4243c082f593](https://github.com/Shakoquo/Lichii-sharkiix-version/tree/4243c082f59330b31686cb0e8b35ed82756f7ee0) | AMD-oriented emulator fork and lineage of Mako; avoid emulator GPU implementation in the native renderer. |
 | [CheezerWheezer/Lichii](https://github.com/CheezerWheezer/Lichii) | 56 | [a8e84764e45e](https://github.com/CheezerWheezer/Lichii/tree/a8e84764e45e6b6a6615f7f26cc525e74f69a7a1) | AMD-superior branch; hardware-specific emulator tuning, not a general Longshot default. |
@@ -152,7 +171,7 @@ README descriptions below are discovery evidence, not independent gameplay verif
 | [Syyrhc/Lichii-Ally](https://github.com/Syyrhc/Lichii-Ally) | 30 | [6d20d651a216](https://github.com/Syyrhc/Lichii-Ally/tree/6d20d651a2165b3c6408c7a6b2223c3464f79dcf) | ROG Ally/handheld focus. No desktop-wide power, resolution or memory presets imported. |
 | [oceanpacificpeace/lichii-shader-sync](https://github.com/oceanpacificpeace/lichii-shader-sync) | 336 | [9a8bf8cf707b](https://github.com/oceanpacificpeace/lichii-shader-sync/tree/9a8bf8cf707b49f5f10ee283a62cfdb5103ccb78) | Shader-sync utility. Do not import/download community game-derived cache payloads; use locally rebuilt pipeline recipes. |
 | [mja00/Lichii](https://github.com/mja00/Lichii) | 21 | [043d5296390e](https://github.com/mja00/Lichii/tree/043d5296390efadb865c4a57066ba9d4c59f9840) | OoT emulator compatibility branch; source/commit comparison reference, no emulator core transplant. |
-| [tangerineturtle1/NX2navi](https://github.com/tangerineturtle1/NX2navi) | 3755 | [5190f8e932b9](https://github.com/tangerineturtle1/NX2navi/tree/5190f8e932b92cf694d9f8b5a7ef6e52c141de2a) | Research-only: LICENSE-ADDITIONS reserves new code despite MIT metadata. Independent/upstream analogues cover graphics/UI features; no reserved additions copied. |
+| [tangerineturtle1/NX2navi](https://github.com/tangerineturtle1/NX2navi) | 3926 | [5ae55db41c7d](https://github.com/tangerineturtle1/NX2navi/tree/5ae55db41c7d11c4e997d2676019939a936e560b) | Research-only: LICENSE-ADDITIONS still reserves additions at the refreshed head despite MIT metadata. Reviewed recent render-target reuse and helper-thread defaults; no reserved source copied. Native independent/upstream equivalents selected. |
 | [loteran/NX2navi](https://github.com/loteran/NX2navi) | 12 | [1ab1e001985a](https://github.com/loteran/NX2navi/tree/1ab1e001985a333ab7e31217ba8810a3c521d3af) | Linux packaging fork; inherits the NX2navi licensing boundary. Not imported. |
 | [ZuanCrisp/NX2Navi-Zelda-OOT-Port](https://github.com/ZuanCrisp/NX2Navi-Zelda-OOT-Port) | 9 | [53523106136d](https://github.com/ZuanCrisp/NX2Navi-Zelda-OOT-Port/tree/53523106136dd7eaa94f5e2e0f8965c064eca2d1) | NX2navi derivative; not treated as a separate native recompilation or a license workaround. |
 | [prop11/Epona](https://github.com/prop11/Epona) | 0 | [f5da269add5c](https://github.com/prop11/Epona/tree/f5da269add5c8040d4f6c6aeb7f811cd08125f3c) | NX2navi derivative; no reserved additions imported. |
@@ -167,7 +186,12 @@ README descriptions below are discovery evidence, not independent gameplay verif
 | [nauxph/Lichii-AMD](https://github.com/nauxph/Lichii-AMD) | 2 | [1779779ccdbe](https://github.com/nauxph/Lichii-AMD/tree/1779779ccdbe20d0afbde2e5fb733e195593a647) | AMD emulator work; separate implementation/measurement required in native Hookshot. |
 | [kanade333/Zakantine](https://github.com/kanade333/Zakantine) | 3 | [a612e1dbe3f0](https://github.com/kanade333/Zakantine/tree/a612e1dbe3f06d6c07cffebdc47e1307f257acf6) | Lichii/nx2 derivative; no distinct tested native integration selected. |
 | [JimerSamuel/Fritchii](https://github.com/JimerSamuel/Fritchii) | 1 | [9a2124404816](https://github.com/JimerSamuel/Fritchii/tree/9a2124404816de459aa305de1732794cd1520853) | Arc B580-focused Fritchii branch; not a general desktop preset. |
-| [Frizti/Fritchii](https://github.com/Frizti/Fritchii) | — | 404 | Original URL returned 404. Surviving mirrors and shared Hookshot pipeline-source provenance used instead. |
+| [Frizti/Fritchii](https://github.com/Frizti/Fritchii) | 4009 | [f66ea633db60](https://github.com/Frizti/Fritchii/tree/f66ea633db6058efe31a9611718019e5bd1667eb) | Original URL accessible again at this refresh. Emulator source and save-export workflows reviewed; shared pipeline recipe already present. Native Longshot save import preserves source profiles. |
+| [MagicBeanDev/Longshot](https://git.magicbean.dev/MagicBeanDev/Longshot) | 48 | `cf605c85bbae` | Separate community project, not BaileyPillon/Longshot. Eleven more GPL changes selectively adapted: toggles, damage scaling and correction, ocarina/web/layout fixes, CPU paths, occlusion correction, Lichii shadow-map tables. Sparse VRAM and broad engine replacement deferred; see source provenance. |
+| [MagicBeanDev/LongshotLauncher](https://git.magicbean.dev/MagicBeanDev/LongshotLauncher) | 2 | `0e6e1d78210e` | Distinct Team MagicBean community project, not BaileyPillon/Longshot. Reviewed release/feature history; no wholesale merge of its diverged runtime or replacement of this fork. Save importer, profile separation and launcher workflows independently covered here. |
+| [dev-ewann/Longshot](https://github.com/dev-ewann/Longshot) | 12 | [01d3ee79e732](https://github.com/dev-ewann/Longshot/tree/01d3ee79e732a9978ae5a55f2953e171c1bd32bd) | Surviving copy at the same reviewed revision as madebyjordan/Longshot; no additional distinct feature established by this head. |
+| [Z-TOON/Hookshot](https://github.com/Z-TOON/Hookshot) | 11 | [1ea715d1d91c](https://github.com/Z-TOON/Hookshot/tree/1ea715d1d91c82bb421b6aa95a21c6b625ac8eea) | Surviving personal Hookshot copy. Reviewed the distinct 1ea715d1 capture-to-mirror compute-copy change (181 renderer lines and a regression fixture). Deferred from this bundle: upstream evidence mainly reduces GPU upload time, while local profiling points to CPU submission costs. Shared renderer history overlaps the existing base. |
+| [antonioalvromero/Ocarina-Atlas](https://github.com/antonioalvromero/Ocarina-Atlas) | 5 | [96c92a9ea7f7](https://github.com/antonioalvromero/Ocarina-Atlas/tree/96c92a9ea7f7e2ebfc16798ce9fdf5f6584fa8fe) | MIT live atlas/dungeon/Skulltula tracker candidate. Its live RPC targets Lichii/Fritchii, not the native bridge. Requires an explicit adapter and map-asset provenance review; not installed or represented as compatible. Existing Boomerang save tracker remains available. |
 
 ## Verification and follow-up
 

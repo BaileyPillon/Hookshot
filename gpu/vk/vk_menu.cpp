@@ -736,6 +736,10 @@ const char* tx_text_size(int v) {
     if ((unsigned)v >= sizeof t / sizeof t[0]) return t[0];
     return t[v];
 }
+const char* tx_damage_taken(int v) {
+    static const char* const names[] = {"Half", "Normal", "Double", "Quadruple"};
+    return names[v >= 0 && v < 4 ? v : 1];
+}
 const char* tx_fov(int v) { return v == 100 ? "100% (original)" : tx_percent(v); }
 const char* tx_prompts(int v) {
     static const char* t[HOS_PROMPT_N + 1] = {"Auto", "Switch", "Xbox", "PlayStation 4", "PlayStation 5", "Steam Deck",
@@ -1308,9 +1312,13 @@ Row rows[] = {
     // developer's rows
     {TAB_DEBUG, "Debug tools", &opts.debug_tools, 0, 1, 1, tx_onoff,
      "Testing tools: no-clip flight, a free camera, teleport, Link's age, the inventory, the clock, heart protection and "
-     "movement speed. Off puts flight, the free camera and heart protection away and Link back to his own speed.", nullptr, false, true},
+     "movement speed. Off puts flight, the free camera and heart protection away and Link back to his own speed and damage.", nullptr, false, true},
     {TAB_DEBUG, "Heart protection", nullptr, 0, 0, 0, nullptr,
      "Protects Link's hearts. Hits can still knock him back.", nullptr, false, true, 0},
+    {TAB_DEBUG, "Damage taken", &opts.damage_taken, 0, 3, 1, tx_damage_taken,
+     "How much health Link loses from a hit. Normal is unchanged. Half rounds up to the next quarter heart. "
+     "Changes apply at once; healing is unchanged. Heart protection takes priority. Debug tools Off makes it Normal "
+     "until they are on again.", nullptr, false, true},
     {TAB_DEBUG, "No-clip flight", nullptr, 0, 0, 0, nullptr,
      "Enable double-tap Jump for takeoff and landing. Hold Jump to climb or L to descend.", nullptr, false, true, 1},
     {TAB_DEBUG, "Mark position", nullptr, 0, 0, 0, nullptr,
@@ -1615,7 +1623,7 @@ int ask_sel = 0;   // (the restart question's choice: 0 Later, 1 Restart now)
 /// and menu_tick brings back one past the end
 bool row_shown(int i) {
     const int* v = rows[i].value;
-    return (rows[i].cheat < 0 || cheats_on()) && (v != &opts.reflex || reflex_available()) &&
+    return ((rows[i].cheat < 0 && v != &opts.damage_taken) || cheats_on()) && (v != &opts.reflex || reflex_available()) &&
            (v != &opts.antilag || antilag_available()) &&
            (v != &opts.dlss || ur::upscaler_shown(upscalers_available())) &&
            (v != &opts.dlss_model || ur::model_shown(dlss_why() == DLSS_OK)) &&
@@ -1732,22 +1740,23 @@ const char* tx_pad_layout(int v) {
     return t[std::min(std::max(v, 0), 3)];
 }
 void apply_pad_layout(int layout) {
-    if (!can_bind()) return;
-    if (layout == 0) { // Nintendo (Default: Bottom=B, Right=A, Top=X, Left=Y)
-        host->bind(HOS_BIND_PAD, HOS_SW_A, 0, HOS_PAD_EAST);
-        host->bind(HOS_BIND_PAD, HOS_SW_B, 0, HOS_PAD_SOUTH);
-        host->bind(HOS_BIND_PAD, HOS_SW_X, 0, HOS_PAD_NORTH);
-        host->bind(HOS_BIND_PAD, HOS_SW_Y, 0, HOS_PAD_WEST);
-    } else if (layout == 1) { // Xbox / PC Standard (Bottom=A, Right=B, Left=X, Top=Y)
-        host->bind(HOS_BIND_PAD, HOS_SW_A, 0, HOS_PAD_SOUTH);
-        host->bind(HOS_BIND_PAD, HOS_SW_B, 0, HOS_PAD_EAST);
-        host->bind(HOS_BIND_PAD, HOS_SW_X, 0, HOS_PAD_WEST);
-        host->bind(HOS_BIND_PAD, HOS_SW_Y, 0, HOS_PAD_NORTH);
-    } else if (layout == 2) { // Swap Face Buttons (Bottom=A, Right=B, Top=X, Left=Y)
-        host->bind(HOS_BIND_PAD, HOS_SW_A, 0, HOS_PAD_SOUTH);
-        host->bind(HOS_BIND_PAD, HOS_SW_B, 0, HOS_PAD_EAST);
-        host->bind(HOS_BIND_PAD, HOS_SW_X, 0, HOS_PAD_NORTH);
-        host->bind(HOS_BIND_PAD, HOS_SW_Y, 0, HOS_PAD_WEST);
+    if (!can_bind() || layout < 0 || layout > 2) return;
+    static const int face[4] = {HOS_SW_A, HOS_SW_B, HOS_SW_X, HOS_SW_Y};
+    static const int want[3][4] = {
+        {HOS_PAD_EAST, HOS_PAD_SOUTH, HOS_PAD_NORTH, HOS_PAD_WEST},   // Nintendo (Default: Bottom=B, Right=A, Top=X, Left=Y)
+        {HOS_PAD_SOUTH, HOS_PAD_EAST, HOS_PAD_WEST, HOS_PAD_NORTH},   // Xbox / PC Standard (Bottom=A, Right=B, Left=X, Top=Y)
+        {HOS_PAD_SOUTH, HOS_PAD_EAST, HOS_PAD_NORTH, HOS_PAD_WEST},   // Swap Face Buttons (Bottom=A, Right=B, Top=X, Left=Y)
+    };
+    // (again while a face button is not the preset's: the host leaves an empty Input 1 as it is when the input asked for is
+    // another button's only one (hos_bind), and that button may take its own new input later in the same pass)
+    for (int pass = 0; pass < 4; pass++) {
+        bool done = true;
+        for (int i = 0; i < 4; i++)
+            if (host->binding(HOS_BIND_PAD, face[i], 0) != want[layout][i]) {
+                host->bind(HOS_BIND_PAD, face[i], 0, want[layout][i]);
+                done = false;
+            }
+        if (done) break;
     }
 }
 int detect_pad_layout() {
@@ -1811,13 +1820,13 @@ void save() {
     // (one writer at a time: the present's thread, the game's (menu_option_set) and the control bridge's, menu_setting_set)
     static std::mutex save_mu;
     std::lock_guard lk(save_mu);
-    // (hookshot) the lines that are not the menu's are kept: the controls, pad_ and key_ (host/nn_hid.c)
+    // (longshot) Keep the controls, pad_ and key_ (host/nn_hid.c), and their toggle_ flags.
     // (and every other line the menu does not write, such as discord_app_id=: they were dropped at the next save)
     std::string kept, others;
     if (FILE* f = fopen(ini_path().c_str(), "r")) {
         char line[256];
         while (fgets(line, sizeof line, f)) {
-            if (!strncmp(line, "pad_", 4) || !strncmp(line, "key_", 4)) {
+            if (!strncmp(line, "pad_", 4) || !strncmp(line, "key_", 4) || !strncmp(line, "toggle_", 7)) {
                 kept += line;
                 continue;
             }
@@ -1867,6 +1876,7 @@ void save() {
                 if (alternate >= 0) fprintf(f, ",%d", alternate);
                 fputc('\n', f);
             }
+            if (i < HOS_SW_N) fprintf(f, "toggle_%s=%d\n", bind_names[i], (opts.hold_toggle >> i) & 1);
             fprintf(f, "key_%s=%d,%d\n", bind_names[i], host->binding(HOS_BIND_KEY, i, 0), host->binding(HOS_BIND_KEY, i, 1));
         }
         fclose(f);
@@ -2291,6 +2301,7 @@ void set_row(Row& r, int v, int dir, bool keep = true) {
         if (v < 0) v = 2;
         *r.value = v;
         apply_pad_layout(*r.value);
+        *r.value = detect_pad_layout();   // (Custom when the preset could not be had whole)
     } else if (r.value == &opts.preset) {
         *r.value = v > r.hi ? r.lo : v < r.lo ? r.hi : v;
         apply_preset(*r.value);
@@ -2725,8 +2736,9 @@ std::string restart_line(ui::Ctx& c, float px, float width) {
 /// (hookshot) The Debug tab's order: the tools' rows by their group (Row::cheat), Up and Down walking them so; Inventory item
 /// and Change quantity are not shown (the Inventory page edits every amount)
 struct DebugGroup { const char* title; int from, to; };   // (debug_tools_order[from, to))
-constexpr int debug_tools_order[] = {0, 1, 11, 9, 10, 8, 2, 3, 7, 4};
-constexpr DebugGroup debug_groups[] = {{"Player", 0, 5}, {"Travel", 5, 8}, {"Camera & world", 8, 10}};
+// (-1 is the saved Damage taken option, not a cheat action: beside Heart protection in Player)
+constexpr int debug_tools_order[] = {0, -1, 1, 11, 9, 10, 8, 2, 3, 7, 4};
+constexpr DebugGroup debug_groups[] = {{"Player", 0, 6}, {"Travel", 6, 9}, {"Camera & world", 9, 11}};
 constexpr int kDebugGroups = sizeof debug_groups / sizeof debug_groups[0];
 constexpr int kDebugTools = sizeof debug_tools_order / sizeof debug_tools_order[0];
 /// The Debug tab's rows as shown (its row numbers, tab_row_to_global's): the switch, the tools in debug_tools_order while they
@@ -2738,8 +2750,10 @@ int debug_rows(int* out, int* dev, int* dev_head) {
     for (int k = 0; k < count; ++k)
         if (rows[tab_row_to_global(TAB_DEBUG, k)].value == &opts.debug_tools) out[n++] = k;
     for (int t = 0; t < kDebugTools; ++t)
-        for (int k = 0; k < count; ++k)
-            if (rows[tab_row_to_global(TAB_DEBUG, k)].cheat == debug_tools_order[t]) out[n++] = k;
+        for (int k = 0; k < count; ++k) {
+            const Row& r = rows[tab_row_to_global(TAB_DEBUG, k)];
+            if (debug_tools_order[t] < 0 ? r.value == &opts.damage_taken : r.cheat == debug_tools_order[t]) out[n++] = k;
+        }
     *dev = n;
     for (int k = 0; k < count; ++k) {
         const Row& r = rows[tab_row_to_global(TAB_DEBUG, k)];
@@ -2773,7 +2787,7 @@ void draw_debug_rows(ui::Ctx& c, float cx0, float cx1, float top, float bottom, 
         const float pad = (tight ? 36 : 64) * s;
         if (r.cheat == 9 && age_shown(9))
             return 2 * std::max(ui::size_of(c.f.strong, px, "Kid").x, ui::size_of(c.f.strong, px, "Adult").x) + pad;
-        if (r.value && r.hi - r.lo != r.step) {   // (a Developer row of more than two values, Robust buffers: its widest, arrows)
+        if (r.value && r.hi - r.lo != r.step) {   // (a row of more than two values: its widest, arrows)
             float w = 0;
             for (int v = r.lo; v <= r.hi; v += r.step) w = std::max(w, ui::size_of(c.f.strong, px, r.text(v)).x);
             return w + (tight ? 56 : 68) * s;
@@ -2844,7 +2858,7 @@ void draw_debug_rows(ui::Ctx& c, float cx0, float cx1, float top, float bottom, 
         const float width = in_tools ? cell_w[vcol[i]] : std::max(need(r, false), cell_w[two ? 1 : 0]);
         const ImVec2 va(x1 - width, y), vb(x1, y + rh);
         name_cell(c, ImVec2(x0, y), ImVec2(va.x, y + rh), r.name, selected, restart_changed(r));   // (boxed, as on the other tabs)
-        if (r.value && r.hi - r.lo != r.step) {   // (Robust buffers: Auto, Off, On, with arrows as on the other tabs)
+        if (r.value && r.hi - r.lo != r.step) {   // (a choice with arrows, as on the other tabs)
             const bool fixed = row_fixed(r.value);
             choice_cell(c, va, vb, r.text(*r.value), selected, !fixed, !fixed, fixed);
         } else if (r.value) {   // (Debug tools and the Developer rows: values of the options, Off and On)
@@ -3182,9 +3196,13 @@ void draw_controls(ui::Ctx& c) {
     const char* title = page_row ? page_row->name : sel_i < kControls ? controls[sel_i].name : "Reset to defaults";
     const char* help = listening ? (listening == 1 ? "Press the gamepad button to use. Esc cancels." : "Press the key to use. Esc cancels.")
                        : page_row ? page_row->help
-                                  : "Either gamepad input or an assigned key presses the selected Switch button. Enter binds the "
-                                    "selected input and Delete clears it. A button's only gamepad input stays with it: it does not move into "
-                                    "another's empty Input 2. The game's button icons follow after a restart.";
+                       : sel_i < kControls && controls[sel_i].button < HOS_SW_N && controls[sel_i].button != HOS_SW_PLUS &&
+                         controls[sel_i].button != HOS_SW_MINUS && ccol == kCtlToggle
+                           ? "Hold-to-toggle: press once to hold this Switch button, again to release it. Either gamepad input or a "
+                             "bound key works. Opening Insert, pressing Plus or Minus, focus loss or rebinding releases it. Off by default."
+                           : "Either gamepad input or an assigned key presses the selected Switch button. Enter binds the "
+                             "selected input and Delete clears it. A button's only gamepad input stays with it: it does not move into "
+                             "another's empty Input 2. The game's button icons follow after a restart.";
     const char* hint = page_row ? (page_row->hint ? page_row->hint(*page_row->value, -1) : nullptr)
                                 : "Gamepad: the D-pad moves, A binds, B goes back. Ocarina note keys are only notes while "
                                   "the ocarina waits for one; away from it they do their other jobs.";
@@ -3198,12 +3216,12 @@ void draw_controls(ui::Ctx& c) {
                  hh + 18 * s, bar_top - 12 * s);
     }
     const float rx0 = cx0 + 44 * s, rx1 = cx1 - 44 * s, width = rx1 - rx0;
-    const float pad_x = rx0 + width * 0.32f, key_x = rx0 + width * 0.75f;
-    const float col_x[] = {pad_x, (pad_x + key_x) * 0.5f, key_x, rx1};
+    const float pad_x = rx0 + width * 0.28f, key_x = rx0 + width * 0.64f, toggle_x = rx0 + width * 0.87f;
+    const float col_x[] = {pad_x, (pad_x + key_x) * 0.5f, key_x, toggle_x, rx1};
     float top = hh + 22 * s;
     ui::text_mid_centre(c, c.f.body, 15 * s, col_x[kCtlAlternate], top + 8 * s, ui::kDim, "Gamepad");
     ui::text_mid(c, c.f.body, 15 * s, rx0 + 20 * s, top + 27 * s, ui::kDim, "Button");
-    const char* titles[kCtlColumns] = {"Input 1", "Input 2", "Keyboard"};
+    const char* titles[kCtlColumns] = {"Input 1", "Input 2", "Keyboard", "Toggle"};
     for (int col = kCtlPrimary; col < kCtlColumns; col++)
         ui::text_mid_centre(c, c.f.body, 15 * s, (col_x[col] + col_x[col + 1]) * 0.5f, top + 27 * s, ui::kDim, titles[col]);
     top += 43 * s;
@@ -3237,9 +3255,11 @@ void draw_controls(ui::Ctx& c) {
         hits.add(rx0, y0, pad_x, y1, menu_hit::kCtlRow, i);
         const bool keys = keys_only(i);
         for (int col = kCtlPrimary; col < kCtlColumns; col++) {
-            const bool keyboard = col == kCtlKeyboard, disabled = keys && !keyboard;
-            const float a = col_x[col] + (col == kCtlPrimary ? 0 : 3 * s), b = col_x[col + 1] - (keyboard ? 0 : 3 * s);
-            const std::string v = keyboard ? keys_text(ctl.button) : disabled ? "-" : pad_name(host->binding(HOS_BIND_PAD, ctl.button, col));
+            const bool keyboard = col == kCtlKeyboard, toggle = col == kCtlToggle;
+            const bool disabled = (keys && !keyboard) || (toggle && (ctl.button >= HOS_SW_N || ctl.button == HOS_SW_PLUS || ctl.button == HOS_SW_MINUS));
+            const float a = col_x[col] + (col == kCtlPrimary ? 0 : 3 * s), b = col_x[col + 1] - (toggle ? 0 : 3 * s);
+            const std::string v = disabled ? "-" : keyboard ? keys_text(ctl.button) : toggle
+                ? tx_onoff((opts.hold_toggle >> ctl.button) & 1) : pad_name(host->binding(HOS_BIND_PAD, ctl.button, col));
             const bool here = sel && col == (keys ? kCtlKeyboard : ccol);
             const ImVec2 va(a, y), vb(b, y + rh);
             if (here && listening) {   // (waiting for the new input: amber, the outline as a selected value's)
@@ -4011,6 +4031,12 @@ void menu_init() {
                 const int v = atoi(eq + 1);
                 *r.value = r.value == &opts.output_res ? parse_output(eq + 1) : std::min(std::max(v, r.lo), r.hi);
             }
+            if (!strncmp(line, "toggle_", 7))
+                for (int i = 0; i < HOS_SW_N; i++)
+                    if (i != HOS_SW_PLUS && i != HOS_SW_MINUS && !strcmp(line + 7, bind_names[i])) {
+                        const int bit = 1 << i;
+                        opts.hold_toggle = atoi(eq + 1) == 1 ? opts.hold_toggle | bit : opts.hold_toggle & ~bit;
+                    }
             has_resolution |= !strcmp(line, "resolution");
             v2 |= !strcmp(line, "options_version");
             if (!strcmp(line, "options_version")) version = atoi(eq + 1);
@@ -4117,7 +4143,8 @@ void menu_first_start_for_gpu(const VkPhysicalDeviceProperties& props, const VkP
          (unsigned long long)mb, tx_preset(preset));
 }
 
-int menu_vsync() { return env_on("RX_VK_FIFO") ? 1 : env_on("RX_VK_IMMEDIATE") ? 2 : opts.vsync; }
+// (the switches read once, at the first present: they are for the whole run, and each present asked twice)
+int menu_vsync() { static const int run = env_on("RX_VK_FIFO") ? 1 : env_on("RX_VK_IMMEDIATE") ? 2 : 0; return run ? run : opts.vsync; }
 bool resolution_auto() { return opts.resolution == 0; }
 int resolution_scale() {
     const float s = upscaler_rows::percent(opts.resolution) / 100.0f;
@@ -4147,6 +4174,7 @@ int menu_heart_protection() {
 int menu_player_flight() { return cheats_on() ? player_flight.load(std::memory_order_relaxed) : -1; }
 int menu_free_camera() { return cheats_on() ? free_camera.load(std::memory_order_relaxed) : 0; }
 int menu_link_speed() { return cheats_on() ? link_speeds[std::clamp(link_speed.load(std::memory_order_relaxed), 0, kLinkSpeeds - 1)] : 100; }
+int menu_damage_taken() { return cheats_on() ? opts.damage_taken : 1; }   // (Normal while the tools are off; the choice is kept)
 int menu_take_cheat_action() { return cheat_action.exchange(0, std::memory_order_relaxed); }
 
 void menu_note_present_sizes(uint32_t picture_w, uint32_t picture_h, uint32_t window_w, uint32_t window_h) {
@@ -4738,8 +4766,11 @@ void menu_tick() {
                 set_row(r, *r.value + (press[3] ? -r.step : r.step), press[3] ? -1 : 1);
                 changed = true;
             } else if (i >= 0) {
+                const int columns = i < kControls && controls[i].button < HOS_SW_N &&
+                                    controls[i].button != HOS_SW_PLUS && controls[i].button != HOS_SW_MINUS ? kCtlColumns : kCtlToggle;
+                if (ccol >= columns) ccol = kCtlKeyboard;   // (no toggle on pause, map, stick directions or ocarina notes)
                 if ((press[3] || press[4]) && i < kControls && !keys_only(i)) {
-                    ccol = (ccol + kCtlColumns + (press[3] ? -1 : 1)) % kCtlColumns;
+                    ccol = (ccol + columns + (press[3] ? -1 : 1)) % columns;
                     changed = true;
                 }
                 const int col = keys_only(i) ? kCtlKeyboard : ccol;
@@ -4747,13 +4778,19 @@ void menu_tick() {
                     if (i == kControls) {
                         host->bind(HOS_BIND_PAD, -1, 0, 0);
                         opts.pad_layout = 0;
+                        opts.hold_toggle = 0;
+                        save();
+                    }
+                    else if (col == kCtlToggle) {
+                        opts.hold_toggle ^= 1 << controls[i].button;
                         save();
                     }
                     else listening = col == kCtlKeyboard ? 2 : 1, listen_armed = false, listen_end = prof_now() + 6000000000LL;
                     changed = true;
                 }
                 if ((press[8] || press[9]) && i < kControls) {
-                    if (col != kCtlKeyboard) {
+                    if (col == kCtlToggle) opts.hold_toggle &= ~(1 << controls[i].button);
+                    else if (col != kCtlKeyboard) {
                         host->bind(HOS_BIND_PAD, controls[i].button, col, -1);
                         opts.pad_layout = detect_pad_layout();
                     }

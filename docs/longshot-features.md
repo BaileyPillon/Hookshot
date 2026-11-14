@@ -1,7 +1,8 @@
 # Longshot integration branch
 
 This branch combines Hookshot **v2.2.0-rc.1** with Longshot's checkpoint foundation, separate save profiles,
-adjustable FPS text, a mod manager, and pinned co-op, randomizer and completion-tracker integrations.
+adjustable FPS text, a mod manager, hold-toggle controls, damage scaling, selected native renderer/gameplay fixes,
+and pinned co-op, randomizer and completion-tracker integrations.
 It is a development build. See [validation](longshot-validation.md) for exactly what was tested and what still needs gameplay acceptance.
 
 The [research report](longshot-fork-research.md) explains the selection, licenses and exclusions. The existing
@@ -14,6 +15,24 @@ newer DLSS/FSR frame-generation paths and frame diagnostics; radial stick deadzo
 independent ocarina-note bindings and touchpad menu support; field-of-view/camera controls; audio/background controls;
 13-language menus; opening skip; and the local control/bug-report tools. Availability of graphics features depends on
 the build's optional SDKs and the GPU. Inclusion of source is not a performance measurement or a recommendation to enable frame generation.
+
+## Controller and gameplay additions
+
+**Insert → Controls → Bindings** now has a **Toggle** column. Turn it on for a held action, such as running,
+shielding or aiming: one press holds the action, the next releases it. It follows the existing remapped keyboard
+and controller bindings, including DualSense bindings. All toggles start Off; Plus/Minus and the separate ocarina
+note rows cannot latch. Opening menus, losing focus or rebinding releases latched actions. Resetting controls also
+resets toggles. Enabling a toggle does not swap your physical button bindings.
+
+**Insert → Debug → Debug tools On → Player → Damage taken** offers Half, Normal, Double and Quadruple damage.
+Normal is the default. Turning Debug tools off restores Normal behavior without forgetting the selected value.
+Healing is unaffected; Half rounds up to a quarter heart, and Heart protection takes precedence. This is a local
+gameplay option; mixed co-op/randomizer use has not been validated.
+
+The bundle also fixes complete controller layout selection after a cleared face-button binding, Scarecrow Song
+timing and remapped-note recall, and floor-web reactions above 60 FPS. It includes CPU-path changes, conservative
+occlusion handling and Lichii-derived shadow-map table support. See the [backport provenance](../integrations/feature-backports.md)
+and [validation](longshot-validation.md); these fixes do not imply locked 60 FPS in all scenes.
 
 ## Launcher, save imports and checkpoint browser
 

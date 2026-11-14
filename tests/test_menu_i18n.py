@@ -57,6 +57,10 @@ class MenuI18nTests(unittest.TestCase):
     def test_current_hints_are_translated(self):
         # Whole-string lookup needs the complete hint. Dropping a stale entry and lowering its count is not a fix.
         hints = {
+            "debug tools": (
+                "Testing tools: no-clip flight, a free camera, teleport, Link's age, the inventory, the clock, heart protection and "
+                "movement speed. Off puts flight, the free camera and heart protection away and Link back to his own speed and damage."
+            ),
             "controls": (
                 "Gamepad: the D-pad moves, A binds, B goes back. Ocarina note keys are only notes while "
                 "the ocarina waits for one; away from it they do their other jobs."

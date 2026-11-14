@@ -51,6 +51,7 @@ Options opts;
 int saves = 0;
 void save() { ++saves; }
 void apply_pad_layout(int) {}
+int detect_pad_layout() { return opts.pad_layout; }
 void sync_preset_budgets(int) {}
 void env_release(const int*) {}   // (the environment's hold on a row: none here)
 void vram_budget_sync() {}
