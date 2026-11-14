@@ -7,6 +7,8 @@ Branch: `feat/fork-feature-integration`. Upstream base: `4aee23659b9436dab2cd7be
 
 | Check | Result | What it proves |
 |---|---|---|
+| Occlusion backport full source suite | **495 passed, 0 failed, 43 skipped**, 1,345 seconds, 2 workers | Clean complete sweep with the correct existing toolchain; no gameplay benchmark ran concurrently. Shader preparation ran in the background. No assertions/timeouts weakened. |
+| Occlusion backport local build and cache | **Incremental game/renderer build succeeded; shader preparation exited 0** | Source `23b69111`, existing O2/PGO and NGX. Full preparation took 2,229 s. The subsequent game's one-time cache warm built 25,382 noted and 9,925 compute pipelines in 17.0 s, with none missing. Only the experimental ordinary-mode game was updated. |
 | Final source sweep and failed-case reruns | **494 checks passed across the sweep and reruns; 43 skipped; no unresolved failures** | The full sweep took 687 s with a game running: 490 passed, two compiler setup failures and two 60 s fixture timeouts. Setting the existing `HOOKSHOT_MINGW` fixed `fpx_sticky` and `spawn_emit` (56/58 s). After the game closed, unchanged `exclusive_marks` and `fallback_buffer_cleanup` passed serially in 19 s. This is not a single clean 494-pass run; no assertion or timeout was weakened. |
 | Full `python -I -B tests/run_all.py --jobs 3` after launcher additions | **493 passed, 0 failed, 43 skipped**, 506 seconds | Game-free host, renderer, tools, existing checkpoint/devtools and source regression checks. Skips include Linux-only cases, missing .NET/spirv-val and other declared unavailable dependencies. Run alongside the fresh game compilation. |
 | New/affected focused group | **11 passed, 0 failed**, 15 seconds | Profile isolation; mod-manager/native-loader agreement; co-op opt-in/build guards; randomizer synthetic formats and seed-save isolation; overlay/input/present/screensaver regressions. |
@@ -71,6 +73,10 @@ toolchain/dependency environment resolve those. The differing test totals reflec
 
 ## Not yet verified in the combined game
 
+The follow-up [performance investigation](longshot-performance.md) records the newer renderer and controlled native
+frame-time measurements. The earlier FPS samples above remain historical observations of the earlier build; they are
+not the baseline for a claimed percentage speedup.
+
 A new executable and matching renderer were freshly lifted, compiled and deployed to a separate experimental folder.
 The PR stays a **draft** while the following gameplay acceptance checks are completed:
 
@@ -79,8 +85,8 @@ The PR stays a **draft** while the following gameplay acceptance checks are comp
 3. Two-player co-op: remote puppets, inventory/progress consistency, reconnect and saving.
 4. Complete randomized progression and Archipelago delivery; seed generation, logic replay and a successful boot are narrower checks.
 5. Tracker mapping accuracy and overlay during extended gameplay.
-6. Before enabling frame generation/HDR, compare the same scene and check the prior blur/flicker symptoms. No FPS or stutter
-   improvement has been measured, and no such improvement is claimed.
+6. Before enabling frame generation/HDR, compare the same scene and check the prior blur/flicker symptoms. Both stay Off
+   during the follow-up performance work; its results do not validate either feature or every game area.
 
 Linux, other GPU vendors, handheld devices, reserved NX2navi code and incomplete Master Quest content are not represented as
 tested integrations. Existing playable files, native saves and graphics/controller settings were not replaced.

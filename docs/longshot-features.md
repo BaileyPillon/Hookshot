@@ -225,4 +225,7 @@ the regular play installation until gameplay acceptance is complete. Existing sa
 The mod manager and companions are tools in this checkout; no new installer or desktop shortcut is implied.
 
 No default enables frame generation or HDR here. For a system that previously showed flicker, begin testing with its known
-working settings and compare the same scene before trying these features. There are no measured FPS gains claimed for this branch.
+working settings and compare the same scene before trying these features. The subsequent
+[performance investigation](longshot-performance.md) records the occlusion-query backport, controlled comparisons and
+remaining limits. It does not establish sustained 60 FPS throughout the game or promote the experimental build over the
+regular installation.

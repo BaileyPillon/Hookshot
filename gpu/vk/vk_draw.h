@@ -51,7 +51,10 @@ struct DrawArgs {
     // mesh shading (NVN2 task / mesh programs): workgroups, or indirect as above
     bool mesh = false;
     int groups[3] = {0, 1, 1};
-    uint32_t first_task = 0;   // (hookshot: a direct mesh draw's first task workgroup, NVN's DrawMeshTasks(first, count))
+    uint32_t first_task = 0;   // (longshot: a direct mesh draw's first task workgroup, NVN's DrawMeshTasks(first, count))
+    // (longshot) an occlusion query around the draw, inside its pass (vk_replay.cpp, RX_VK_OCC_QUERIES); none when null
+    VkQueryPool occ_pool = VK_NULL_HANDLE;
+    uint32_t occ_query = 0;
 };
 
 /// A recording starts (its slot's descriptor pool and upload stream are reset); value: the timeline value it signals

@@ -40,6 +40,12 @@ called NX2navi an emulator and ocarina-recomp an N64 port; their own architectur
 
 ## License and evidence findings that change the selection
 
+The follow-up runtime work also backports MagicBeanDev/Longshot's GPL occlusion-query fix at
+`cd9062658d35884032590b822b825ebbd00899e2`. It restores the game's ability to omit hidden objects instead of reporting
+every visibility query as visible. The [local performance investigation](longshot-performance.md) records same-build
+On/Off comparisons, unfavourable runs, shader preparation and verification limits. The comparison and maintainer
+Reddit threads above were reopened during this follow-up: they still do not establish a universal fastest fork.
+
 - **NX2navi is not wholly MIT.** Its repository metadata reports MIT, but
   [LICENSE-ADDITIONS](https://github.com/tangerineturtle1/NX2navi/blob/5190f8e932b9/LICENSE-ADDITIONS)
   reserves later additions and requires written permission for copying/modification/distribution. No such code was
