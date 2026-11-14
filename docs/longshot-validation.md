@@ -103,3 +103,34 @@ tested integrations. Existing playable files, native saves and graphics/controll
 Detailed local logs are in ignored `work/fork-research/`: `final-suite.log`, `focused-final.log`, `renderer-build.log`,
 `host-compile.log`, `coop-tests.log`, `tracker-integrated-build.log` and `tracker-integrated-tests.log`.
 Those logs and generated game/companion data are not part of the source PR.
+
+## Ranked iteration, 13 November 2026
+
+The [ranked backlog](longshot-roadmap.md) connects the existing fork/Reddit research to concrete acceptance gates.
+The preceding eleven-backport bundle at `3ef85c28` passed 506 checks with zero failures and 43 declared skips,
+and all 13 applicable GitHub jobs passed. It was fully lifted and compiled locally. This iteration adds staged
+save-copy recovery, mapped-page reports and two mouse/cursor fixes; upstream attribution is in
+[feature backports](../integrations/feature-backports.md).
+
+- Save failures were reproduced against the previous implementation: four failing checks and one error in the
+  nine-case portable transaction suite. After adaptation all nine pass, including partial copies, rollback failure,
+  read-only cleanup, a backup failure, preserved settings and dry run. Fixtures use authored bytes, never real saves.
+- Compiled memory fixtures check duplicate/partial/zero mappings, leaf boundaries, allocation failure, double frees,
+  capped totals and exact legacy reports. Heap commitment and GPU-import thresholds were not changed.
+- Mouse focus, pointer and screensaver fixtures passed. The imported cursor fixture initially assumed no co-op hover
+  hook; its ordering assertion was adapted to preserve both behaviors rather than deleting the hook.
+- Fresh shader preparation exited 0 in 1,530.3 seconds. The final precompile reported 24,489 noted pipelines and
+  9,925 compute pipelines, with zero of either not made. The translator's old cache was not relabelled or forced valid.
+- The incremental native build compiled in 367 seconds with zero failures, then linked the executable in four
+  seconds and renderer in one. Runtime content fingerprint: `a2f3402d` (a content fingerprint, not a Git revision).
+- The experimental executable and renderer were backed up, replaced and SHA-256 verified. Saved options were
+  byte-identical after shader preparation. A new compatible slot-03 archive was captured and restored into a private
+  test directory. The active experimental profile and ordinary play installation were not used as test destinations.
+
+The complete suite finished in 1,208 seconds with **508 passes, one timing failure and 43 declared skips**. The
+failed `test_prepare_stall.py` fixture printed a waiting message after its simulated moving worker paused; its
+unchanged isolated rerun passed in 52.4 seconds with the game and compilers closed. All 509 checks therefore have
+passing coverage, but this was not a single all-green sweep. No assertion or timeout was relaxed.
+
+Gameplay results follow when finished. Source tests, successful compilation, checkpoint preparation and actual
+gameplay acceptance are separate gates.

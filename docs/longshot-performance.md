@@ -245,3 +245,27 @@ There is no consistent win: the normal path had better p99 in both windows and b
 exited normally. Parallel recording remains disabled; this short experiment does not clear its existing visual
 acceptance concerns in other scenes. The final installed game uses the normal path, with no persisted experimental
 environment override. All 19 protected regular-install files still match the baseline, with no new regular save files.
+
+## Ranked iteration: baseline qualification and memory reports
+
+The attempted pre-bundle `feature-baseline-a` comparison on content fingerprint `844b897e` is **invalid**: all 31
+samples in each Market window had `event=true`, and the native window showed an NPC conversation. Its numerical
+51.70 FPS standing / 25.48 turning results remain in the local record but cannot establish a gameplay speedup.
+Zora River teleport was refused while that event was active. A system snapshot during the earlier investigation
+showed about 114 GiB committed against 64 GiB physical RAM, 4.5 GiB available and heavy paging; this is evidence
+of system pressure, not proof of a single renderer cause.
+
+The next `feature-baseline-b` attempt used child-only input isolation for the entire route. It was stopped after
+the user interrupted desktop control, before completing a comparable route. Neither incomplete run replaces the
+valid earlier observations above. Physical user input during previous tests is another reason to isolate scripted
+routes. No user applications were closed to improve a score.
+
+Current comparisons use the same `a2f3402d` binary, prepared shader cache, graphics settings, copied native-save
+bytes and route, with only `HOS_MEMINFO_OLD=1` versus default accounting changed. The legacy switch preserves the
+original QueryMemoryInfo and svc GetInfo results separately. This is a test of mapped-page accounting, not the
+entire upstream lazy-commit/GPU-import patch. Performance windows reject events, loading or scene changes, retain
+invalid samples and release scripted input even when measurement fails. Read-only process/system memory counters
+are sampled once per second. Their process page-fault count includes soft faults and is not a hard-page-in metric.
+
+Shader preparation and source builds/tests finish before gameplay measurements. Results and limitations follow
+when those runs complete; no local memory reduction or FPS gain is claimed from upstream measurements alone.

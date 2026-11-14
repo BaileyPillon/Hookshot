@@ -277,6 +277,76 @@ HLE(_ZN2nn2os17FreeAddressRegionEm) {
     RET(0);
 }
 
+/* Mapped-page accounting adapted from GPL commit a4c77174. One 32 KiB leaf per touched GiB. */
+#define PAGES_LEAF_SHIFT 30   /* (a GB of the window: 2^18 pages, 4096 words of bits) */
+#define PAGES_LEAF_PAGES (1ULL << (PAGES_LEAF_SHIFT - 12))
+static uint64_t *mapped_bits[(HOS_GUEST_SPACE + (1ULL << PAGES_LEAF_SHIFT) - 1) >> PAGES_LEAF_SHIFT];
+static uint64_t mapped_bytes, mapped_peak, mapped_logged;
+/* map 1: marked mapped, 0: marked free, 2: nothing changed. The bytes that change (or would, for 2: those not mapped yet) */
+static int64_t pages_count_locked(uint64_t a, uint64_t n, int map) {
+    if (!n) return 0;
+    int64_t changed = 0;
+    for (uint64_t p = a >> 12; p < (a + n + 0xFFF) >> 12 && p < (HOS_GUEST_SPACE >> 12); p++) {
+        uint64_t **leaf = &mapped_bits[p / PAGES_LEAF_PAGES];
+        if (!*leaf) {   /* (nothing in this GB mapped yet) */
+            if (map == 2) { changed += 0x1000; continue; }
+            if (map == 0) continue;
+            *leaf = (uint64_t *)calloc(PAGES_LEAF_PAGES / 64, sizeof(uint64_t));
+            if (!*leaf) continue;   /* (not counted: the report errs low, as before this count) */
+        }
+        const uint64_t i = p % PAGES_LEAF_PAGES, bit = 1ULL << (i & 63);
+        uint64_t *word = &(*leaf)[i >> 6];
+        const int was = (*word & bit) != 0;
+        if (map == 2) changed += was ? 0 : 0x1000;
+        else if (map == 1 && !was) *word |= bit, changed += 0x1000;
+        else if (map == 0 && was) *word &= ~bit, changed += 0x1000;
+    }
+    return changed;
+}
+static void pages_report_locked(void) {
+    if (mapped_bytes > mapped_peak) mapped_peak = mapped_bytes;
+    const uint64_t step = 256ULL << 20;
+    if (mapped_bytes / step != mapped_logged / step) {
+        mapped_logged = mapped_bytes;
+        hos_log("mem: the game's mapped pages %llu MB (peak %llu); heap %llu MB; the console's total %llu MB",
+                (unsigned long long)(mapped_bytes >> 20), (unsigned long long)(mapped_peak >> 20),
+                (unsigned long long)(hos_heap_size >> 20), (unsigned long long)(hos_total_memory >> 20));
+    }
+}
+
+/* Callers hold no lock. Count logical mappings, not the physical residency of imported pages.
+   FreeMemoryPages only releases whole pages inside its range, as discard_pages does. */
+static void pages_update(uint64_t a, uint64_t n, int map) {
+    if (!n) return;
+    if (!map) {
+        const uint64_t lo = (a + 0xFFF) & ~0xFFFULL, hi = (a + n) & ~0xFFFULL;
+        if (hi <= lo) return;
+        a = lo, n = hi - lo;
+    }
+    LOCK();
+    const uint64_t changed = (uint64_t)pages_count_locked(a, n, map);
+    if (map) mapped_bytes += changed;
+    else mapped_bytes -= changed;
+    pages_report_locked();
+    UNLOCK();
+}
+
+/* Derived from MagicBeanDev/Longshot a4c77174 (wertredgreen). Report the heap and mapped pages so the game's
+   resource cache sees its console budget. The legacy result differs between QueryMemoryInfo and svc GetInfo;
+   preserve both exactly for HOS_MEMINFO_OLD=1 comparisons. Heap commitment and GPU import policy are unchanged. */
+uint64_t hos_used_memory(uint64_t base, uint64_t legacy) {
+    static int old = -1;
+    int use_old = __atomic_load_n(&old, __ATOMIC_RELAXED);
+    if (use_old < 0) __atomic_store_n(&old, use_old = env_on("HOS_MEMINFO_OLD"), __ATOMIC_RELAXED);
+    if (use_old) return legacy;
+    LOCK();
+    const uint64_t mapped = mapped_bytes, heap = hos_heap_size, total = hos_total_memory;
+    UNLOCK();
+    /* Saturate before either addition; free = total - used must never wrap. */
+    if (base >= total || heap >= total - base || mapped >= total - base - heap) return total;
+    return base + heap + mapped;
+}
+
 /* nn::os::AllocateMemoryPages(unsigned long, unsigned long) -> Result: new pages read as zero */
 HLE(_ZN2nn2os19AllocateMemoryPagesEmm) {
     HOS_TRACE_CALL("AllocateMemoryPages");
@@ -320,6 +390,7 @@ HLE(_ZN2nn2os19AllocateMemoryPagesEmm) {
             for (int i = 0; i < nruns; i++) memset(GP(runs[i][0]), 0, runs[i][1] - runs[i][0]);
     }
     HOS_WRITTEN(GP(a), n);
+    pages_update(a, n, 1);
     RET(0);
 }
 
@@ -331,6 +402,7 @@ HLE(_ZN2nn2os15FreeMemoryPagesEmm) {
         RET(0xCA01);
         return;
     }
+    pages_update(ARG(0), ARG(1), 0);
     if (ARG(0) + ARG(1) > (1ULL << 32)) {   /* (mkw-recomp: the pair of AllocateMemoryPages' commit above) */
         const uint64_t lo = (ARG(0) + 0xFFF) & ~0xFFFULL, hi = (ARG(0) + ARG(1)) & ~0xFFFULL;
         /* (pages the Vulkan back end imported, as part of a pool's 16 MB chunk, stay committed and are zeroed: the GPU
@@ -358,7 +430,7 @@ HLE(_ZN2nn2os15QueryMemoryInfoEPNS0_10MemoryInfoE) {
     uint64_t info = ARG(0);
     HOS_TRACE_CALL("QueryMemoryInfo");
     G64(info + 0x00) = hos_total_memory;                       /* total available */
-    G64(info + 0x08) = hos_program_size + (16ULL << 20);       /* total used: program + system */
+    G64(info + 0x08) = hos_used_memory(hos_program_size + (16ULL << 20), hos_program_size + (16ULL << 20));       /* total used: program, system, heap and mapped pages */
     G64(info + 0x10) = hos_heap_size;                          /* total heap */
     G64(info + 0x18) = hos_heap_used;                          /* allocated heap */
     G64(info + 0x20) = hos_program_size;                       /* program */

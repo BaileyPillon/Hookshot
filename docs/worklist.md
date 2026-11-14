@@ -1,5 +1,10 @@
 # Work list
 
+BaileyPillon/Longshot's hardware-specific integration order and acceptance gates are maintained in the
+[ranked development backlog](longshot-roadmap.md). Its first reproduced issue is failed save-copy recovery
+(S0 × affected workflow 1 × confidence 1 = 8); the staged-copy fix is under regression validation. The upstream
+board below remains the broader community record rather than a claim that its issues are fixed in this fork.
+
 The prioritized list of open work, scored as [docs/workflow.md](workflow.md) describes: **score = severity weight x
 reach x confidence** (S0 8, S1 5, S2 3, S3 1; reach 0-1 from `scripts/hardware_report.py` and the Steam survey;
 confidence 1.0 reproduced with a log, 0.7 two or more reporters with logs, 0.4 one report or no log). Work from the

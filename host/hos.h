@@ -51,6 +51,7 @@ extern const char hos_main_build_id[];                 /* (gen/hos_image.c: main
    hos_thread.c) run only when the lifted main is Mario Kart World's: any other game has other code there */
 int hos_game_is_mkw(void);
 #define HOS_GAME_TITLE "Hookshot"
+uint64_t hos_used_memory(uint64_t base, uint64_t legacy); /* capped heap/page accounting; legacy for A/B */
 void hos_commit(uint64_t addr, uint64_t size);         /* (mkw_glue.c) guest pages made usable by host APIs */
 int hos_mem_region(uint64_t addr, uint64_t size);      /* (hos_mem.c) the control bridge: 0 if not wholly in mapped guest memory */
 #if defined(A64_WRITE_TRACK) && !defined(__EMSCRIPTEN__)

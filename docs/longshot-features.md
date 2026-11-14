@@ -4,6 +4,7 @@ This branch combines Hookshot **v2.2.0-rc.1** with Longshot's checkpoint foundat
 adjustable FPS text, a mod manager, hold-toggle controls, damage scaling, selected native renderer/gameplay fixes,
 and pinned co-op, randomizer and completion-tracker integrations.
 It is a development build. See [validation](longshot-validation.md) for exactly what was tested and what still needs gameplay acceptance.
+The [ranked development backlog](longshot-roadmap.md) records the implementation order and remaining acceptance gates.
 
 The [research report](longshot-fork-research.md) explains the selection, licenses and exclusions. The existing
 play installation is not updated by these source changes or the companion preparation commands.

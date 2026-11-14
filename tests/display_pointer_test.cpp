@@ -36,7 +36,8 @@ static int coop_mouse(HWND, POINT, int) { return 0; } // Co-op off; real bridge 
 [[maybe_unused]] static int mouse_captured, pointer_tracking, cursor_hidden;
 static HosPointer game_pointer = HOS_POINTER_INIT;
 static int menu_open = 1, game_menu_open;
-static LONG gm_mx, gm_my, gm_shown, play_wheel;
+[[maybe_unused]] static LONG gm_mx, gm_my, gm_shown;
+static LONG play_wheel;
 static LONG64 play_wheel_ns;
 static int captured_before_menu, esc_had_capture;   // (Esc's note: host/display.c)
 static int64_t hos_now_ns() { return 100000000; }
@@ -44,6 +45,7 @@ static void gm_cursor_off(HWND) {}
 
 static bool shown = true;
 static void gm_mouse_used() { shown = true; }
+[[maybe_unused]] static void gm_mouse_moved(HWND) { gm_mouse_used(); }   // (the move's own rule: tests/test_cursor_hidden_in_play.py)
 static int gm_cursor_shown() { return shown; }
 static LONG mouse_dx, mouse_dy;
 static unsigned queries, tracks, cancels;

@@ -18,6 +18,10 @@ the table records attribution for the adapted portions. No game-generated cache,
 | [8732ffaba8a6e543473beab6fe84191557576ecf](https://git.magicbean.dev/MagicBeanDev/Longshot/commit/8732ffaba8a6e543473beab6fe84191557576ecf) | simonwjackson | Half damage uses the complete hit before lethal clamping |
 | [e65cb1e00b8116363326988ca05db15822f0924e](https://git.magicbean.dev/MagicBeanDev/Longshot/commit/e65cb1e00b8116363326988ca05db15822f0924e) | simonwjackson | Per-button hold-to-toggle controls and reset on focus/menu/rebind transitions |
 | [7315957c08b0ee3845f2a76a132ec1d3c0f105d1](https://git.magicbean.dev/MagicBeanDev/Longshot/commit/7315957c08b0ee3845f2a76a132ec1d3c0f105d1) | pmwork-personal; Lichii work by Zortos | Clustered-light shadow-map descriptor tables, derived from Lichii bd0171f7 and 282a585a |
+| [58484df8ed17cbe4e1ee8a231dd0b71252567bef](https://git.magicbean.dev/MagicBeanDev/Longshot/commit/58484df8ed17cbe4e1ee8a231dd0b71252567bef) | jarynclouatre | Stage save copies before replacing slots; roll back failed renames and retain recovery data |
+| [a4c77174023a3cbe7945fba16f18c0e0bbbcd3f7](https://git.magicbean.dev/MagicBeanDev/Longshot/commit/a4c77174023a3cbe7945fba16f18c0e0bbbcd3f7) | wertredgreen | Mapped-page counting and capped used-memory reporting only; preserve exact legacy query results for A/B |
+| [d906c8f4276652b51c5e30dc5e938648c9e8d42d](https://git.magicbean.dev/MagicBeanDev/Longshot/commit/d906c8f4276652b51c5e30dc5e938648c9e8d42d) | jarynclouatre | Cancel pending game-menu clicks when the pointer leaves or another menu takes focus |
+| [c0442078d32e13b7073a0451129296948e6fd1c8](https://git.magicbean.dev/MagicBeanDev/Longshot/commit/c0442078d32e13b7073a0451129296948e6fd1c8) | jarynclouatre | Hide the cursor during controller/keyboard play; genuine mouse movement restores it |
 
 ## Compatibility choices
 
@@ -35,6 +39,12 @@ the table records attribution for the adapted portions. No game-generated cache,
 - `RX_VK_HANDLE_TABLES=0` and `HOS_CV_SIGNAL_ALWAYS=1` are diagnostic rollback switches, not recommended defaults.
 - Sparse VRAM, a wholesale HeyListen engine replacement, restricted NX2navi additions and emulator frame-generation
   integrations were not combined. The target GPU has 16 GiB; prior local frame generation caused confirmed flicker.
+- The memory adaptation retains existing Windows heap commitment, first-touch handling, file-I/O semantics and GPU
+  import thresholds. It counts logical mappings, not physical residency, handles partial frees conservatively and
+  saturates reports before addition. `HOS_MEMINFO_OLD=1` restores each query's original result for a controlled comparison.
+- Save-copy adaptation retains Longshot discovery/profile naming and the backup-inside-target guard. Staging happens
+  on the destination volume. It handles reported copy/rename failures; it is not a crash-atomic filesystem transaction.
+- Mouse adaptations retain the optional co-op hover hook and hold-toggle controls. Regression fixtures check both.
 
 See [research](../docs/longshot-fork-research.md) and [validation](../docs/longshot-validation.md) for the distinction
 between source regression tests, local gameplay observation and still-unverified features.

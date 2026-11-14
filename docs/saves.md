@@ -129,6 +129,11 @@ that only exists on that side does not stay mixed in with the new save.
 
 ## Before you copy
 
+Copies stage the incoming save on the destination volume before replacing any slot. A failed copy leaves the
+destination intact; a failed rename attempts to restore every old entry. If a locked file also prevents rollback,
+the error names the retained old-entry folder and backup for recovery. This does not claim atomic recovery from a
+power loss between individual renames. No real save is used by the Windows/Linux transaction regression tests.
+
 - **Close both programs first.** A game that is running can write its save again on exit and undo the copy.
 - **Never run two of them on the same save at the same time.** Pointing two at one folder with a symlink may work,
   since the files are the same, but it has not been tried.
