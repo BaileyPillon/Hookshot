@@ -193,3 +193,55 @@ priority. Normal averaged 59.802 and 59.984 FPS (p99 21.613/21.381 ms); Above No
 The profiling switch remained enabled, but the sampler was inactive during these four windows. The earlier 20-second
 diagnostic-route windows were slower: 53.367 standing / 42.638 turning, with a 964.653 ms worst turning frame. These
 unfavourable observations remain recorded; diagnostic runs are not the main before/after performance evidence.
+
+## Normal-startup acceptance after the backports
+
+`acceptance-final` used source `844b897e`, Normal priority, the saved graphics settings and automatic cache-backed
+loading, with no loading/cache/priority override or profiler. A newly captured compatible native checkpoint was
+restored into a private directory and loaded successfully. Startup reused the prepared pipelines in 4.296 seconds.
+
+| Scene / action | Window | Average FPS | p99 ms | Worst ms | Frames over 50 ms |
+|---|---:|---:|---:|---:|---:|
+| Deku Tree standing | 35 s | 59.996 | 21.022 | 29.366 | 0 |
+| Deku Tree turning | 35 s | 58.150 | 30.753 | 62.528 | 2 |
+| Market standing | 30 s | 51.954 | 32.715 | 66.536 | 1 |
+| Market turning | 30 s | 53.507 | 32.892 | 58.551 | 3 |
+| Field forest-approach camera turn | 30 s | 59.974 | 22.507 | 36.445 | 0 |
+| Kakariko entrance walking/turning | 30 s | 58.627 | 25.440 | 147.318 | 1 |
+
+The field turn stayed in its approach corridor, not the open field. Entry and post-movement screenshots were
+inspected. The game exited normally. These latest Market results are slower than the best alternating comparisons;
+the installed build still does **not** meet sustained smooth 60 FPS in every tested scene.
+
+### Window-focus check
+
+`foreground-a`, the same build and automatic loading, initially measured 48.243 / 50.793 FPS in 20-second Market
+standing/turning windows. At the resulting fixed camera view, three 30-second standing windows after bringing the
+game forward, switching away, and bringing it forward again measured 59.131, 55.881 and 56.669 FPS. Their p99
+intervals were 24.965, 42.144 and 36.373 ms; they contained 0, 11 and 8 frames over 50 ms respectively.
+Focus changed during the experiment, as recorded by the input log. The initial view also differs from the later
+standing view, so this is **not a controlled foreground/background speedup result**. The native window visibly
+showed the small FPS badge at top right and PlayStation button prompts. Physical controller input and audio remain
+separate acceptance checks.
+
+A brief resource sample during this run showed roughly five game CPU cores in use, 14.92 GiB game working set,
+about 4 GiB available system RAM and 25% GPU utilization (56 C, 2,835 MHz graphics clock). Blender and the other
+user applications remained active. This snapshot supports investigating CPU/render submission work; it cannot
+establish the sole cause of every slow frame. The game exited cleanly.
+
+### Parallel recording trial
+
+The CPU profile motivated a child-only trial of the existing `RX_VK_PARALLEL=3` option. `parallel-a` and the
+following `parallel-control` used identical private starting saves, automatic cache-backed loading and 30-second
+Market standing/turning windows. The option really activated: the log records three recording threads and their
+segment timings. No source or saved option changed between the runs.
+
+| Run | Standing FPS / p99 ms | Turning FPS / p99 ms | Frames over 50 ms, standing / turning |
+|---|---|---|---|
+| parallel-a, three recording threads | 58.597 / 26.349 | 55.324 / 28.480 | 0 / 5 |
+| parallel-control, normal serial recording | 56.933 / 25.137 | 57.919 / 26.841 | 0 / 1 |
+
+There is no consistent win: the normal path had better p99 in both windows and better moving-camera FPS. Both
+exited normally. Parallel recording remains disabled; this short experiment does not clear its existing visual
+acceptance concerns in other scenes. The final installed game uses the normal path, with no persisted experimental
+environment override. All 19 protected regular-install files still match the baseline, with no new regular save files.
